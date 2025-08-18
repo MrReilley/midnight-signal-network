@@ -1,16 +1,15 @@
-'use client'; // This is a client-side component
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 
-// --- IMPORTANT: REPLACE THIS URL ---
 const streamUrl = 'https://midnight-signal-network-production.up.railway.app/stream/live.m3u8';
-// --- IMPORTANT: REPLACE THIS URL ---
 
 export default function HomePage() {
   const videoRef = useRef(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -20,7 +19,7 @@ export default function HomePage() {
 
     if (Hls.isSupported()) {
       const hls = new Hls({
-        debug: true,
+        debug: false,
         enableWorker: true,
         lowLatencyMode: true,
       });
@@ -31,17 +30,19 @@ export default function HomePage() {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('HLS manifest parsed successfully');
         setIsLoading(false);
+        setIsLive(true);
         video.play().catch((e) => {
           console.log("Autoplay was blocked by the browser:", e);
-          setError("Autoplay blocked - click play to start");
+          setError("Click to start broadcast");
         });
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS Error:', data);
         if (data.fatal) {
-          setError(`Stream error: ${data.details}`);
+          setError(`Signal lost: ${data.details}`);
           setIsLoading(false);
+          setIsLive(false);
         }
       });
 
@@ -54,13 +55,14 @@ export default function HomePage() {
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
+        setIsLive(true);
         video.play().catch((e) => {
           console.log("Autoplay was blocked by the browser:", e);
-          setError("Autoplay blocked - click play to start");
+          setError("Click to start broadcast");
         });
       });
     } else {
-      setError('HLS is not supported in this browser');
+      setError('Broadcast not supported in this browser');
       setIsLoading(false);
     }
 
@@ -77,61 +79,143 @@ export default function HomePage() {
       })
       .catch(err => {
         console.error('Stream URL test failed:', err);
-        setError(`Cannot access stream: ${err.message}`);
+        setError(`Cannot access broadcast: ${err.message}`);
         setIsLoading(false);
       });
 
   }, []);
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white font-mono">
-      <h1 className="text-5xl font-bold text-cyan-400 mb-4" style={{ textShadow: '0 0 10px #00ffff' }}>
-        Midnight Signal
-      </h1>
-      <p className="text-gray-400 mb-8">Broadcasting from the digital ether...</p>
+    <div className="min-h-screen bg-black text-green-400 font-mono overflow-hidden relative">
+      {/* CRT Scanlines Effect */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        <div className="w-full h-full" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
+        }}></div>
+      </div>
 
-      <div className="w-full max-w-4xl bg-black border-8 border-gray-700 rounded-lg shadow-2xl shadow-cyan-500/20 relative">
-        <div className="absolute top-2 right-4 text-red-500 font-bold text-lg animate-pulse z-10">
-          ● LIVE
+      {/* CRT Vignette Effect */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        <div className="w-full h-full" style={{
+          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.8) 100%)',
+        }}></div>
+      </div>
+
+      {/* Main Content */}
+      <main className="relative z-20 flex flex-col items-center justify-center min-h-screen p-4">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-6xl font-bold mb-2" style={{
+            textShadow: '0 0 20px #00ff00, 0 0 40px #00ff00',
+            fontFamily: 'monospace',
+            letterSpacing: '0.2em'
+          }}>
+            MIDNIGHT SIGNAL
+          </h1>
+          <p className="text-green-300 text-lg tracking-wider" style={{
+            textShadow: '0 0 10px #00ff00'
+          }}>
+            BROADCASTING FROM THE DIGITAL ETHER
+          </p>
         </div>
-        
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-              <p className="text-cyan-400">Loading stream...</p>
+
+        {/* TV Frame */}
+        <div className="relative w-full max-w-4xl">
+          {/* TV Border */}
+          <div className="bg-gray-800 border-8 border-gray-700 rounded-lg shadow-2xl relative overflow-hidden">
+            {/* TV Screen */}
+            <div className="relative bg-black">
+              {/* Live Indicator */}
+              {isLive && (
+                <div className="absolute top-4 right-4 z-30">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-red-500 font-bold text-sm tracking-wider">LIVE</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading Screen */}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-400 mx-auto mb-4"></div>
+                    <p className="text-green-400 text-lg tracking-wider">TUNING IN...</p>
+                    <p className="text-green-600 text-sm mt-2">Establishing connection to broadcast</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Screen */}
+              {error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                  <div className="text-center p-8">
+                    <div className="text-red-400 text-4xl mb-4">⚠</div>
+                    <p className="text-red-400 mb-4 text-lg">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="px-6 py-3 bg-green-600 hover:bg-green-700 text-black font-bold rounded border-2 border-green-400 transition-colors"
+                    >
+                      RETRY CONNECTION
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Video Player */}
+              <video 
+                ref={videoRef} 
+                id="player" 
+                muted 
+                playsInline 
+                className="w-full h-full"
+                style={{
+                  filter: 'contrast(1.1) brightness(0.9) saturate(0.8)',
+                }}
+                // Custom video controls
+                controls={false}
+                onContextMenu={(e) => e.preventDefault()}
+              ></video>
+
+              {/* Custom Video Controls */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {/* Volume Control */}
+                    <button 
+                      onClick={() => {
+                        if (videoRef.current) {
+                          videoRef.current.muted = !videoRef.current.muted;
+                        }
+                      }}
+                      className="text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      {videoRef.current?.muted ? '🔇' : '🔊'}
+                    </button>
+                  </div>
+                  <div className="text-green-400 text-sm tracking-wider">
+                    MIDNIGHT SIGNAL
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-        
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20">
-            <div className="text-center p-4">
-              <p className="text-red-400 mb-4">{error}</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        )}
-        
-        <video 
-          ref={videoRef} 
-          id="player" 
-          controls 
-          muted 
-          playsInline 
-          className="w-full h-full"
-        ></video>
-      </div>
-      
-      <div className="mt-4 text-sm text-gray-500">
-        <p>Stream URL: {streamUrl}</p>
-        <p>Status: {isLoading ? 'Loading...' : error ? 'Error' : 'Playing'}</p>
-      </div>
-    </main>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-8 text-center text-green-600 text-sm tracking-wider">
+          <p>FREQUENCY: 24/7 BROADCAST</p>
+          <p>QUALITY: 480P STEREO</p>
+          <p>SOURCE: INTERNET ARCHIVE</p>
+        </div>
+
+        {/* Static Noise Effect (subtle) */}
+        <div className="absolute inset-0 pointer-events-none z-5 opacity-5">
+          <div className="w-full h-full" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
+          }}></div>
+        </div>
+      </main>
+    </div>
   );
 }

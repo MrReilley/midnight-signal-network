@@ -7,15 +7,17 @@ const CONTENT_DIR = '/app/content/main_channel';
 const STREAM_DIR = '/app/streams';
 const PORT = process.env.PORT || 3000;
 
-const BROADCAST_WIDTH = 480;
-const BROADCAST_HEIGHT = 360;
-const BROADCAST_AUDIO_RATE = 44100;
+// Upgraded stream quality settings
+const BROADCAST_WIDTH = 854;  // 480p width
+const BROADCAST_HEIGHT = 480; // 480p height
+const BROADCAST_AUDIO_RATE = 48000; // 48kHz audio
+const BROADCAST_AUDIO_BITRATE = '128k'; // 128k stereo audio
 
 // ============================================================================
 // MAIN EXECUTION LOGIC
 // ============================================================================
 
-console.log("--- Midnight Signal Service Starting ---");
+console.log("--- Midnight Signal Broadcast Engine Starting ---");
 
 // Step 1: Run the curator script to fetch content
 console.log("Step 1: Running the curator script to fetch content...");
@@ -66,14 +68,20 @@ function runCurator() {
             }
             
             const videoFiles = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.mp4') || f.endsWith('.ogv'));
+            const playlistFile = path.join(CONTENT_DIR, 'playlist.txt');
             
             if (videoFiles.length === 0) {
                 console.error("FATAL: Curator ran, but no video files were found. Cannot start stream.");
                 process.exit(1);
             }
 
-            console.log(`Step 2: Video found! Starting FFmpeg stream for ${videoFiles[0]}...`);
-            startStreaming(videoFiles[0]);
+            if (fs.existsSync(playlistFile)) {
+                console.log(`Step 2: Playlist found! Starting enhanced FFmpeg stream with ${videoFiles.length} videos...`);
+                startPlaylistStreaming(playlistFile);
+            } else {
+                console.log(`Step 2: No playlist found, using single video: ${videoFiles[0]}...`);
+                startSingleVideoStreaming(videoFiles[0]);
+            }
             
             console.log("Step 3: Starting HLS web server...");
             startWebServer();
@@ -85,17 +93,81 @@ function runCurator() {
 // HELPER FUNCTIONS
 // ============================================================================
 
-function startStreaming(videoFile) {
+function startPlaylistStreaming(playlistPath) {
+    if (!fs.existsSync(STREAM_DIR)) fs.mkdirSync(STREAM_DIR);
+    
+    // Enhanced FFmpeg command for playlist streaming with better quality
+    const ffmpegArgs = [
+        '-re', // Read input at native frame rate
+        '-f', 'concat', // Use concat demuxer for playlist
+        '-safe', '0', // Allow unsafe file paths
+        '-i', playlistPath, // Input playlist
+        '-stream_loop', '-1', // Loop the entire playlist infinitely
+        '-c:v', 'libx264', // Video codec
+        '-preset', 'ultrafast', // Fast encoding
+        '-tune', 'zerolatency', // Optimize for streaming
+        '-crf', '23', // Constant rate factor for quality
+        '-maxrate', '1000k', // Maximum bitrate
+        '-bufsize', '2000k', // Buffer size
+        '-vf', `scale=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:force_original_aspect_ratio=decrease,pad=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:-1:-1:color=black,setsar=1,format=yuv420p`, // Video filter
+        '-c:a', 'aac', // Audio codec
+        '-ar', BROADCAST_AUDIO_RATE.toString(), // Audio sample rate
+        '-b:a', BROADCAST_AUDIO_BITRATE, // Audio bitrate
+        '-ac', '2', // Stereo audio
+        '-f', 'hls', // HLS format
+        '-hls_time', '4', // Segment duration
+        '-hls_list_size', '5', // Number of segments in playlist
+        '-hls_flags', 'delete_segments+append_list', // Delete old segments and append new ones
+        '-hls_segment_filename', path.join(STREAM_DIR, 'live%03d.ts'), // Segment filename pattern
+        path.join(STREAM_DIR, 'live.m3u8') // Output playlist
+    ];
+    
+    const ffmpeg = spawn('ffmpeg', ffmpegArgs);
+    
+    // FFmpeg writes progress to stderr, not stdout
+    ffmpeg.stderr.on('data', (data) => {
+        const output = data.toString();
+        // Only log actual errors, not normal progress output
+        if (output.includes('Error') || output.includes('error') || output.includes('failed')) {
+            console.error(`FFMPEG_ERROR: ${output}`);
+        } else {
+            console.log(`FFMPEG_LOG: ${output}`);
+        }
+    });
+    
+    ffmpeg.on('close', (code) => {
+        console.log(`FFmpeg process exited with code ${code}`);
+        if (code !== 0) process.exit(1);
+    });
+}
+
+function startSingleVideoStreaming(videoFile) {
     if (!fs.existsSync(STREAM_DIR)) fs.mkdirSync(STREAM_DIR);
     const videoPath = path.join(CONTENT_DIR, videoFile);
+    
+    // Enhanced FFmpeg command for single video with better quality
     const ffmpegArgs = [
-        '-stream_loop', '-1', '-re', '-i', videoPath,
-        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-        '-vf', `scale=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:force_original_aspect_ratio=decrease,pad=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:-1:-1:color=black,setsar=1,format=yuv420p`,
-        '-c:a', 'aac', '-ar', BROADCAST_AUDIO_RATE.toString(), '-b:a', '96k',
-        '-f', 'hls', '-hls_time', '4', '-hls_list_size', '5', '-hls_flags', 'delete_segments',
-        path.join(STREAM_DIR, 'live.m3u8')
+        '-stream_loop', '-1', // Loop the video infinitely
+        '-re', // Read input at native frame rate
+        '-i', videoPath, // Input video
+        '-c:v', 'libx264', // Video codec
+        '-preset', 'ultrafast', // Fast encoding
+        '-tune', 'zerolatency', // Optimize for streaming
+        '-crf', '23', // Constant rate factor for quality
+        '-maxrate', '1000k', // Maximum bitrate
+        '-bufsize', '2000k', // Buffer size
+        '-vf', `scale=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:force_original_aspect_ratio=decrease,pad=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:-1:-1:color=black,setsar=1,format=yuv420p`, // Video filter
+        '-c:a', 'aac', // Audio codec
+        '-ar', BROADCAST_AUDIO_RATE.toString(), // Audio sample rate
+        '-b:a', BROADCAST_AUDIO_BITRATE, // Audio bitrate
+        '-ac', '2', // Stereo audio
+        '-f', 'hls', // HLS format
+        '-hls_time', '4', // Segment duration
+        '-hls_list_size', '5', // Number of segments in playlist
+        '-hls_flags', 'delete_segments', // Delete old segments
+        path.join(STREAM_DIR, 'live.m3u8') // Output playlist
     ];
+    
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
     
     // FFmpeg writes progress to stderr, not stdout
@@ -145,9 +217,12 @@ function startWebServer() {
     // Add a root endpoint that shows stream info
     app.get('/', (req, res) => {
         const streamFiles = fs.existsSync(STREAM_DIR) ? fs.readdirSync(STREAM_DIR) : [];
+        const videoFiles = fs.existsSync(CONTENT_DIR) ? fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.mp4')) : [];
         res.json({
-            service: 'Midnight Signal Streamer',
+            service: 'Midnight Signal Broadcast Engine',
             status: 'running',
+            streamQuality: `${BROADCAST_WIDTH}x${BROADCAST_HEIGHT} @ ${BROADCAST_AUDIO_BITRATE}`,
+            videosInPlaylist: videoFiles.length,
             streamFiles: streamFiles,
             streamUrl: '/stream/live.m3u8'
         });
@@ -155,7 +230,8 @@ function startWebServer() {
     
     app.listen(PORT, () => {
         console.log(`--- HLS stream server listening on port ${PORT} ---`);
-        console.log(`--- Stream should be available at /stream/live.m3u8 ---`);
+        console.log(`--- Stream quality: ${BROADCAST_WIDTH}x${BROADCAST_HEIGHT} @ ${BROADCAST_AUDIO_BITRATE} ---`);
+        console.log(`--- Stream available at /stream/live.m3u8 ---`);
         console.log(`--- Health check available at /health ---`);
     });
 }
