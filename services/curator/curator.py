@@ -3,8 +3,8 @@ import requests
 import sys
 
 VIDEO_DIR = '/app/content/main_channel'
-# A direct link to a small, reliable test video
-VIDEO_URL = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+# A direct link to a very small test video (about 1MB)
+VIDEO_URL = 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4'
 FILE_NAME = 'initial_video.mp4'
 
 def fetch_debug_video():
