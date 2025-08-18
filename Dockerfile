@@ -21,24 +21,26 @@ RUN apt-get update && apt-get install -y \
 # Set the main application directory
 WORKDIR /app
 
-# ---- Curator Setup ----
-# Copy the curator code into a /app/curator directory
+# ---- Install Python Dependencies FIRST ----
+# Copy the requirements file and install dependencies. This is better for caching.
+COPY services/curator/requirements.txt ./
+RUN pip install -r requirements.txt
+
+# ---- Install Node.js Dependencies ----
+# (This is the optional but recommended way using package.json)
+# If you don't have one, the 'RUN npm install express' later is fine.
+# COPY services/streamer/package.json ./
+# RUN npm install
+
+# ---- Copy Application Code ----
 COPY services/curator/curator.py ./curator/
-
-# ---- Streamer Setup ----
-# Copy the streamer code into a /app/streamer directory
 COPY services/streamer/start-stream.js ./streamer/
-# If you have a package.json, copy it now
-# COPY services/streamer/package.json ./streamer/
 
-# ---- Install Dependencies ----
-# We can now run npm install in the correct directory
-RUN pip install internetarchive requests
+# If not using package.json, install express now
 RUN npm install express
 
-# Tell Railway that our service will be listening on this port
+# Tell the service that our service will be listening on this port
 EXPOSE 3000
 
 # The command to run when the container starts
-# We specify the correct path to the script
 CMD ["node", "streamer/start-stream.js"]

@@ -13,13 +13,23 @@ const BROADCAST_AUDIO_RATE = 44100;
 
 // 1. Run the curator once to get content
 console.log("Running initial content curator...");
-const curator = exec('python3 /app/curator/curator.py', (error, stdout, stderr) => {
+
+// Use python3 -u for unbuffered output to see logs in real-time
+const curator = exec('python3 -u /app/curator/curator.py', (error, stdout, stderr) => {
+    console.log("--- Curator script has finished ---"); // Check if the callback is even firing
+
     if (error) {
-        console.error(`Curator script error: ${error}`);
+        console.error(`Curator script EXEC ERROR: ${error}`);
+        // The error object itself might have more details like the exit code
+        console.error(`Full error object:`, error); 
         return;
     }
-    console.log(`Curator output: ${stdout}`);
-    console.error(`Curator stderr: ${stderr}`);
+
+    if (stderr) {
+        console.error(`Curator STDERR: ${stderr}`);
+    }
+
+    console.log(`Curator STDOUT: ${stdout}`);
     
     // 2. After curator is done, start the stream
     startStreaming();
