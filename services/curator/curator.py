@@ -10,13 +10,16 @@ PLAYLIST_FILE = '/app/content/playlist.txt'
 MAX_VIDEOS = 10  # Keep 10 videos in rotation
 MAX_DURATION = 30 * 60  # 30 minutes max per video
 
-# Internet Archive search queries for short videos
+# Internet Archive search queries for short videos - improved queries
 SEARCH_QUERIES = [
     'collection:prelinger',
     'collection:advertising',
     'collection:educational',
     'collection:industrial',
-    'collection:training'
+    'collection:training',
+    'mediatype:movies AND duration:[0 TO 1800]',
+    'mediatype:movies AND collection:movies',
+    'mediatype:movies AND collection:television'
 ]
 
 def fetch_video_list():
@@ -26,13 +29,14 @@ def fetch_video_list():
     videos = []
     for query in SEARCH_QUERIES:
         try:
+            print(f"Searching for: {query}")
             # Search for videos with duration under 30 minutes
-            search_url = f"https://archive.org/advancedsearch.php"
+            search_url = "https://archive.org/advancedsearch.php"
             params = {
                 'q': f'{query} AND mediatype:movies AND duration:[0 TO {MAX_DURATION}]',
                 'fl[]': 'identifier,title,duration,downloads',
                 'sort[]': 'downloads desc',
-                'rows': 50,
+                'rows': 100,
                 'output': 'json'
             }
             
@@ -48,13 +52,24 @@ def fetch_video_list():
                             'title': doc.get('title', 'Unknown'),
                             'duration': doc['duration']
                         })
+                print(f"Found {len(data['response']['docs'])} videos for query '{query}'")
+            else:
+                print(f"No results found for query '{query}'")
                         
         except Exception as e:
             print(f"Warning: Failed to fetch videos for query '{query}': {e}")
             continue
     
-    print(f"Found {len(videos)} potential videos")
-    return videos
+    # Remove duplicates based on identifier
+    unique_videos = []
+    seen_ids = set()
+    for video in videos:
+        if video['id'] not in seen_ids:
+            unique_videos.append(video)
+            seen_ids.add(video['id'])
+    
+    print(f"Found {len(unique_videos)} unique potential videos")
+    return unique_videos
 
 def get_video_download_url(video_id):
     """Get the best MP4 download URL for a video"""

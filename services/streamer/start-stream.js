@@ -101,8 +101,8 @@ function startPlaylistStreaming(playlistPath) {
         '-re', // Read input at native frame rate
         '-f', 'concat', // Use concat demuxer for playlist
         '-safe', '0', // Allow unsafe file paths
+        '-stream_loop', '-1', // Loop the entire playlist infinitely (moved before input)
         '-i', playlistPath, // Input playlist
-        '-stream_loop', '-1', // Loop the entire playlist infinitely
         '-c:v', 'libx264', // Video codec
         '-preset', 'ultrafast', // Fast encoding
         '-tune', 'zerolatency', // Optimize for streaming
@@ -147,7 +147,7 @@ function startSingleVideoStreaming(videoFile) {
     
     // Enhanced FFmpeg command for single video with better quality
     const ffmpegArgs = [
-        '-stream_loop', '-1', // Loop the video infinitely
+        '-stream_loop', '-1', // Loop the video infinitely (moved before input)
         '-re', // Read input at native frame rate
         '-i', videoPath, // Input video
         '-c:v', 'libx264', // Video codec
