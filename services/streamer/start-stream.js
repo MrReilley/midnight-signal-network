@@ -11,50 +11,59 @@ const BROADCAST_WIDTH = 480;
 const BROADCAST_HEIGHT = 360;
 const BROADCAST_AUDIO_RATE = 44100;
 
-// 1. Run the curator once to get content
-console.log("Running initial content curator...");
+// ============================================================================
+// MAIN EXECUTION LOGIC
+// ============================================================================
+
+console.log("--- Midnight Signal Service Starting ---");
+console.log("Step 1: Running the curator script to fetch content...");
 
 // Use python3 -u for unbuffered output to see logs in real-time
 const curator = exec('python3 -u /app/curator/curator.py', (error, stdout, stderr) => {
-    console.log("--- Curator script has finished ---"); // Check if the callback is even firing
+    console.log("--- Curator script has finished ---");
 
     if (error) {
-        console.error(`Curator script EXEC ERROR: ${error}`);
-        // The error object itself might have more details like the exit code
-        console.error(`Full error object:`, error); 
-        return;
+        console.error(`FATAL: Curator script failed to execute. Error: ${error.message}`);
+        console.error(`Full error object:`, error);
+        process.exit(1); // Exit with an error code
     }
-
     if (stderr) {
-        console.error(`Curator STDERR: ${stderr}`);
+        console.error(`Curator script STDERR: ${stderr}`);
+    }
+    console.log(`Curator script STDOUT: ${stdout}`);
+    
+    // Now that the curator is done, check for the video file
+    const videoFiles = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.mp4') || f.endsWith('.ogv'));
+    
+    if (videoFiles.length === 0) {
+        console.error("FATAL: Curator ran, but no video files were found. Cannot start stream.");
+        process.exit(1); // Exit with an error code
     }
 
-    console.log(`Curator STDOUT: ${stdout}`);
+    // If we have a video, start the stream and the server
+    console.log(`Step 2: Video found! Starting FFmpeg stream for ${videoFiles[0]}...`);
+    startStreaming(videoFiles[0]);
     
-    // 2. After curator is done, start the stream
-    startStreaming();
+    console.log("Step 3: Starting HLS web server...");
+    startWebServer();
 });
 
-function startStreaming() {
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function startStreaming(videoFile) {
     if (!fs.existsSync(STREAM_DIR)) fs.mkdirSync(STREAM_DIR);
     
-    const videoFiles = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.mp4'));
-    if (videoFiles.length === 0) {
-        console.error("No video files found after curation. Cannot start stream.");
-        return;
-    }
-
-    console.log("Found content, starting FFmpeg stream...");
+    const videoPath = path.join(CONTENT_DIR, videoFile);
 
     const ffmpegArgs = [
         '-stream_loop', '-1',
-        '-f', 'lavfi', '-i', `anullsrc=channel_layout=stereo:sample_rate=${BROADCAST_AUDIO_RATE}`,
         '-re',
-        '-i', path.join(CONTENT_DIR, videoFiles[0]),
-        '-filter_complex', `[1:v]scale=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:force_original_aspect_ratio=decrease,pad=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:-1:-1:color=black,setsar=1,format=yuv420p[outv];[1:a][0:a]amerge=inputs=2,pan=stereo|c0<c0|c1<c1[outa]`,
-        '-map', '[outv]',
-        '-map', '[outa]',
-        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-crf', '30',
+        '-i', videoPath,
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+        '-vf', `scale=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:force_original_aspect_ratio=decrease,pad=${BROADCAST_WIDTH}:${BROADCAST_HEIGHT}:-1:-1:color=black,setsar=1,format=yuv420p`,
         '-c:a', 'aac', '-ar', BROADCAST_AUDIO_RATE.toString(), '-b:a', '96k',
         '-f', 'hls', '-hls_time', '4', '-hls_list_size', '5',
         '-hls_flags', 'delete_segments',
@@ -63,18 +72,27 @@ function startStreaming() {
     
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
     
-    ffmpeg.stdout.on('data', (data) => console.log(`FFMPEG: ${data}`));
+    ffmpeg.stdout.on('data', (data) => console.log(`FFMPEG_LOG: ${data}`));
     ffmpeg.stderr.on('data', (data) => console.error(`FFMPEG_ERROR: ${data}`));
-    ffmpeg.on('close', (code) => console.log(`FFmpeg process exited with code ${code}`));
+    ffmpeg.on('close', (code) => {
+        console.log(`FFmpeg process exited with code ${code}`);
+        // If ffmpeg stops, we should probably stop the whole service
+        if (code !== 0) {
+            process.exit(1);
+        }
+    });
 }
 
-// 3. Start a simple web server to serve the HLS files
-const app = express();
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    next();
-});
-app.use(express.static(STREAM_DIR));
-app.listen(PORT, () => {
-    console.log(`HLS stream server listening on port ${PORT}`);
-});
+function startWebServer() {
+    const app = express();
+    app.use((req, res, next) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        next();
+    });
+    app.use('/stream', express.static(STREAM_DIR)); // Serve from /stream endpoint
+    
+    app.listen(PORT, () => {
+        console.log(`--- HLS stream server listening on port ${PORT} ---`);
+        console.log(`--- Stream should be available at /stream/live.m3u8 ---`);
+    });
+}
