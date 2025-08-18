@@ -97,8 +97,18 @@ function startStreaming(videoFile) {
         path.join(STREAM_DIR, 'live.m3u8')
     ];
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
-    ffmpeg.stdout.on('data', (data) => console.log(`FFMPEG_LOG: ${data}`));
-    ffmpeg.stderr.on('data', (data) => console.error(`FFMPEG_ERROR: ${data}`));
+    
+    // FFmpeg writes progress to stderr, not stdout
+    ffmpeg.stderr.on('data', (data) => {
+        const output = data.toString();
+        // Only log actual errors, not normal progress output
+        if (output.includes('Error') || output.includes('error') || output.includes('failed')) {
+            console.error(`FFMPEG_ERROR: ${output}`);
+        } else {
+            console.log(`FFMPEG_LOG: ${output}`);
+        }
+    });
+    
     ffmpeg.on('close', (code) => {
         console.log(`FFmpeg process exited with code ${code}`);
         if (code !== 0) process.exit(1);
