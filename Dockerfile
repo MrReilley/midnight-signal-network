@@ -13,14 +13,24 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container
+# Set the main application directory
 WORKDIR /app
 
-# Copy the streamer and curator code into the container
-COPY . .
-COPY ../curator ./curator
+# ---- Curator Setup ----
+# Copy the curator code into a /app/curator directory
+COPY services/curator/curator.py ./curator/
 
-# Install Python and Node.js dependencies
+# ---- Streamer Setup ----
+# Copy the streamer code into a /app/streamer directory
+COPY services/streamer/start-stream.js ./streamer/
+
+# (Optional but good practice) If you have a package.json for your streamer,
+# you would copy it here and run npm install
+# COPY services/streamer/package.json ./streamer/
+# RUN cd streamer && npm install
+
+# ---- Install Dependencies ----
+# Install Python and Node.js dependencies in the main app directory
 RUN pip install internetarchive requests
 RUN npm install express
 
@@ -28,4 +38,5 @@ RUN npm install express
 EXPOSE 3000
 
 # The command to run when the container starts
-CMD ["node", "start-stream.js"]
+# We specify the correct path to the script
+CMD ["node", "streamer/start-stream.js"]
