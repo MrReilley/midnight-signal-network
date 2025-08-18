@@ -13,7 +13,7 @@ const BROADCAST_AUDIO_RATE = 44100;
 
 // 1. Run the curator once to get content
 console.log("Running initial content curator...");
-const curator = exec('python3 curator/curator.py', (error, stdout, stderr) => {
+const curator = exec('python3 /app/curator/curator.py', (error, stdout, stderr) => {
     if (error) {
         console.error(`Curator script error: ${error}`);
         return;
