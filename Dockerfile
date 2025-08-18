@@ -1,44 +1,31 @@
-# Use a standard Ubuntu base image
-FROM ubuntu:22.04
+# Use an official Node.js image, which includes Node, npm, and a base OS
+FROM node:20-slim
 
-# Avoid prompts during installation
-ENV DEBIAN_FRONTEND=noninteractive
-
-# ---- CORRECTED NODE.JS INSTALLATION ----
-# Install curl, then use the NodeSource script to add the repository for Node.js 20.x
-# Then install Node.js itself.
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
-
-# Install other necessary software: Python, FFmpeg
+# Install FFmpeg and Python
 RUN apt-get update && apt-get install -y \
+    ffmpeg \
     python3 \
     python3-pip \
-    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the main application directory
 WORKDIR /app
 
-# ---- Curator Setup ----
-# Copy the curator code into a /app/curator directory
-COPY services/curator/curator.py ./curator/
+# Copy the curator code
+COPY services/curator/curator_mvp.py ./curator/
 
-# ---- Streamer Setup ----
-# Copy the streamer code into a /app/streamer directory
-COPY services/streamer/start-stream.js ./streamer/
-# If you have a package.json, copy it now
-# COPY services/streamer/package.json ./streamer/
+# Copy the streamer's package.json
+COPY services/streamer/package.json .
 
-# ---- Install Dependencies ----
-# We can now run npm install in the correct directory
+# Install Node.js and Python dependencies
+RUN npm install
 RUN pip install internetarchive requests
-RUN npm install express
 
-# Tell Railway that our service will be listening on this port
+# Copy the rest of the streamer code
+COPY services/streamer/start-stream.js .
+
+# Tell Railway what port our service listens on
 EXPOSE 3000
 
 # The command to run when the container starts
-# We specify the correct path to the script
-CMD ["node", "streamer/start-stream.js"]
+CMD ["npm", "start"]
