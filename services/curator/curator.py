@@ -3,8 +3,8 @@ import requests
 import sys
 
 VIDEO_DIR = '/app/content/main_channel'
-# A direct link to a short, reliable public domain video file from Internet Archive
-VIDEO_URL = 'https://archive.org/download/prelinger_1949_Lucky_Strike_Be_Happy_Go_Lucky/prelinger_1949_Lucky_Strike_Be_Happy_Go_Lucky_512kb.mp4'
+# A direct link to a small, reliable test video
+VIDEO_URL = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
 FILE_NAME = 'initial_video.mp4'
 
 def fetch_debug_video():
