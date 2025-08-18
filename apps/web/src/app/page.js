@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import Hls from 'hls.js';
 
 // --- IMPORTANT: REPLACE THIS URL ---
-const streamUrl = 'https://YOUR_RAILWAY_STREAMER_URL/live.m3u8';
+const streamUrl = 'https://midnight-signal-network-production.up.railway.app';
 // --- IMPORTANT: REPLACE THIS URL ---
 
 export default function HomePage() {
