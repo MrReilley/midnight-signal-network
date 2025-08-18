@@ -34,12 +34,14 @@ RUN echo "--- INSTALLED PYTHON PACKAGES ---" && python3 -m pip list
 # ---- Install Node.js Dependencies ----
 RUN npm install express
 
-# ---- Copy the rest of the application code ----
+# ---- Copy the application code ----
+# Copy curator files to the correct location
 COPY services/curator/curator.py ./curator/
-COPY services/streamer/start-stream.js ./streamer/
+# Copy streamer files
+COPY services/streamer/start-stream.js ./
 
 # Expose the port the app runs on
 EXPOSE 3000
 
 # The command to run when the container starts
-CMD ["node", "streamer/start-stream.js"]
+CMD ["node", "start-stream.js"]

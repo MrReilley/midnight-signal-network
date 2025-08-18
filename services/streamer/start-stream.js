@@ -17,40 +17,29 @@ const BROADCAST_AUDIO_RATE = 44100;
 
 console.log("--- Midnight Signal Service Starting ---");
 
-// Step 1: Run a diagnostic command to check the environment
-console.log("Step 1: Running environment diagnostics...");
-exec('echo "--- Environment Diagnostics ---" && whoami && echo "PATH: $PATH" && ls -l /usr/bin/python3', (diagError, diagStdout, diagStderr) => {
-    console.log(diagStdout);
-    if (diagStderr) {
-        console.error("Diagnostics STDERR:", diagStderr);
-    }
-    if (diagError) {
-        console.error("FATAL: Could not run diagnostic command.", diagError);
-        process.exit(1);
-    }
-
-    // Step 2: Now run the curator script using its absolute path
-    console.log("Step 2: Running the curator script to fetch content...");
-    runCurator();
-});
-
+// Step 1: Run the curator script to fetch content
+console.log("Step 1: Running the curator script to fetch content...");
+runCurator();
 
 function runCurator() {
-    // USE THE ABSOLUTE PATH to the python executable.
-    const curator = exec('/usr/bin/python3 -u /app/curator/curator.py', (error, stdout, stderr) => {
+    const curator = exec('python3 /app/curator/curator.py', (error, stdout, stderr) => {
         console.log("--- Curator script has finished ---");
 
         if (error) {
             console.error(`FATAL: Curator script failed to execute. Error: ${error.message}`);
-            // It is critical to log stderr as it often contains the actual Python error
             console.error(`Curator STDERR: ${stderr}`);
             process.exit(1);
         }
         if (stderr && !error) {
-            // Sometimes IA library prints warnings to stderr, which is fine.
             console.warn(`Curator STDERR (non-fatal): ${stderr}`);
         }
         console.log(`Curator STDOUT: ${stdout}`);
+        
+        // Check if content directory exists and has video files
+        if (!fs.existsSync(CONTENT_DIR)) {
+            console.error("FATAL: Content directory does not exist after curator run.");
+            process.exit(1);
+        }
         
         const videoFiles = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.mp4') || f.endsWith('.ogv'));
         
@@ -59,17 +48,16 @@ function runCurator() {
             process.exit(1);
         }
 
-        console.log(`Step 3: Video found! Starting FFmpeg stream for ${videoFiles[0]}...`);
+        console.log(`Step 2: Video found! Starting FFmpeg stream for ${videoFiles[0]}...`);
         startStreaming(videoFiles[0]);
         
-        console.log("Step 4: Starting HLS web server...");
+        console.log("Step 3: Starting HLS web server...");
         startWebServer();
     });
 }
 
-
 // ============================================================================
-// HELPER FUNCTIONS (These remain unchanged)
+// HELPER FUNCTIONS
 // ============================================================================
 
 function startStreaming(videoFile) {
