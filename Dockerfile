@@ -4,10 +4,15 @@ FROM ubuntu:22.04
 # Avoid prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install all necessary software: Node, Python, FFmpeg
+# ---- CORRECTED NODE.JS INSTALLATION ----
+# Install curl, then use the NodeSource script to add the repository for Node.js 20.x
+# Then install Node.js itself.
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
+# Install other necessary software: Python, FFmpeg
 RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
     python3 \
     python3-pip \
     ffmpeg \
@@ -23,14 +28,11 @@ COPY services/curator/curator.py ./curator/
 # ---- Streamer Setup ----
 # Copy the streamer code into a /app/streamer directory
 COPY services/streamer/start-stream.js ./streamer/
-
-# (Optional but good practice) If you have a package.json for your streamer,
-# you would copy it here and run npm install
+# If you have a package.json, copy it now
 # COPY services/streamer/package.json ./streamer/
-# RUN cd streamer && npm install
 
 # ---- Install Dependencies ----
-# Install Python and Node.js dependencies in the main app directory
+# We can now run npm install in the correct directory
 RUN pip install internetarchive requests
 RUN npm install express
 
