@@ -132,6 +132,7 @@ def get_video_download_url(video_id):
         
         metadata = response.json()
         if 'files' not in metadata:
+            print(f"No files found for {video_id}")
             return None
             
         # Find the smallest MP4 file for faster download
@@ -145,11 +146,14 @@ def get_video_download_url(video_id):
                 })
         
         if not mp4_files:
+            print(f"No MP4 files found for {video_id}")
             return None
             
         # Pick the smallest file for fastest download
         mp4_files.sort(key=lambda x: x['size'])
-        return mp4_files[0]['url']
+        selected = mp4_files[0]
+        print(f"Selected {selected['name']} ({selected['size']} bytes) for {video_id}")
+        return selected['url']
         
     except Exception as e:
         print(f"Error getting download URL for {video_id}: {e}")
@@ -258,7 +262,7 @@ def fetch_curated_playlist():
     
     # Get random video IDs
     video_ids = get_random_video_ids()
-    print(f"Selected {len(video_ids)} random videos for download")
+    print(f"Selected {len(video_ids)} random videos for download: {video_ids}")
     
     downloaded_files = []
     
@@ -272,24 +276,9 @@ def fetch_curated_playlist():
             break
     
     if not downloaded_files:
-        print("No videos were successfully downloaded, using fallback")
-        # Fallback to a single test video
-        fallback_url = 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4'
-        filename = 'fallback_video.mp4'
-        filepath = os.path.join(VIDEO_DIR, filename)
-        
-        try:
-            response = requests.get(fallback_url, stream=True, timeout=30)
-            response.raise_for_status()
-            with open(filepath, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-            create_playlist([filename])
-            return
-        except Exception as e:
-            print(f"Fallback video download failed: {e}")
-            sys.exit(1)
+        print("ERROR: No videos were successfully downloaded!")
+        print("This should not happen with our curated video list.")
+        sys.exit(1)
     
     # Create playlist
     create_playlist(downloaded_files)

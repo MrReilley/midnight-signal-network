@@ -10,6 +10,9 @@ export default function HomePage() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [volume, setVolume] = useState(0.5);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,6 +34,8 @@ export default function HomePage() {
         console.log('HLS manifest parsed successfully');
         setIsLoading(false);
         setIsLive(true);
+        video.volume = volume;
+        video.muted = isMuted;
         video.play().catch((e) => {
           console.log("Autoplay was blocked by the browser:", e);
           setError("Click to start broadcast");
@@ -56,6 +61,8 @@ export default function HomePage() {
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
         setIsLive(true);
+        video.volume = volume;
+        video.muted = isMuted;
         video.play().catch((e) => {
           console.log("Autoplay was blocked by the browser:", e);
           setError("Click to start broadcast");
@@ -85,52 +92,90 @@ export default function HomePage() {
 
   }, []);
 
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const newMuted = !videoRef.current.muted;
+      videoRef.current.muted = newMuted;
+      setIsMuted(newMuted);
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      setVolume(newVolume);
+      if (newVolume > 0 && isMuted) {
+        setIsMuted(false);
+        videoRef.current.muted = false;
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-black text-green-400 font-mono overflow-hidden relative">
-      {/* CRT Scanlines Effect */}
-      <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="w-full h-full" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
+    <div className="min-h-screen dark-purple-bg text-purple-200 font-mono overflow-hidden relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20"></div>
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(147, 51, 234, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)',
         }}></div>
       </div>
 
-      {/* CRT Vignette Effect */}
+      {/* CRT Scanlines Effect */}
       <div className="absolute inset-0 pointer-events-none z-10">
         <div className="w-full h-full" style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.8) 100%)',
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(147, 51, 234, 0.03) 2px, rgba(147, 51, 234, 0.03) 4px)',
         }}></div>
+      </div>
+
+      {/* Floating Particles */}
+      <div className="absolute inset-0 pointer-events-none z-5">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-30 float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`
+            }}
+          ></div>
+        ))}
       </div>
 
       {/* Main Content */}
       <main className="relative z-20 flex flex-col items-center justify-center min-h-screen p-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold mb-2" style={{
-            textShadow: '0 0 20px #00ff00, 0 0 40px #00ff00',
-            fontFamily: 'monospace',
-            letterSpacing: '0.2em'
-          }}>
+          <h1 className="text-7xl font-bold mb-4 futuristic-text neon-glow pulse">
             MIDNIGHT SIGNAL
           </h1>
-          <p className="text-green-300 text-lg tracking-wider" style={{
-            textShadow: '0 0 10px #00ff00'
-          }}>
+          <p className="text-purple-300 text-xl tracking-wider neon-glow">
             BROADCASTING FROM THE DIGITAL ETHER
           </p>
+          <div className="mt-4 flex items-center justify-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-red-400 font-bold text-sm tracking-wider">LIVE</span>
+            </div>
+            <span className="text-purple-400 text-sm">•</span>
+            <span className="text-purple-400 text-sm">24/7 BROADCAST</span>
+          </div>
         </div>
 
         {/* TV Frame */}
-        <div className="relative w-full max-w-4xl">
-          {/* TV Border */}
-          <div className="bg-gray-800 border-8 border-gray-700 rounded-lg shadow-2xl relative overflow-hidden">
-            {/* TV Screen */}
-            <div className="relative bg-black">
+        <div className="relative w-full max-w-5xl">
+          {/* TV Border with Glass Effect */}
+          <div className="glass-effect rounded-2xl p-2 neon-border">
+            <div className="relative bg-black rounded-xl overflow-hidden">
               {/* Live Indicator */}
               {isLive && (
                 <div className="absolute top-4 right-4 z-30">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-red-500 font-bold text-sm tracking-wider">LIVE</span>
+                    <span className="text-red-400 font-bold text-sm tracking-wider">LIVE</span>
                   </div>
                 </div>
               )}
@@ -139,9 +184,9 @@ export default function HomePage() {
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-400 mx-auto mb-4"></div>
-                    <p className="text-green-400 text-lg tracking-wider">TUNING IN...</p>
-                    <p className="text-green-600 text-sm mt-2">Establishing connection to broadcast</p>
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
+                    <p className="text-purple-400 text-lg tracking-wider neon-glow">TUNING IN...</p>
+                    <p className="text-purple-600 text-sm mt-2">Establishing connection to broadcast</p>
                   </div>
                 </div>
               )}
@@ -154,7 +199,7 @@ export default function HomePage() {
                     <p className="text-red-400 mb-4 text-lg">{error}</p>
                     <button 
                       onClick={() => window.location.reload()} 
-                      className="px-6 py-3 bg-green-600 hover:bg-green-700 text-black font-bold rounded border-2 border-green-400 transition-colors"
+                      className="retro-button"
                     >
                       RETRY CONNECTION
                     </button>
@@ -166,55 +211,51 @@ export default function HomePage() {
               <video 
                 ref={videoRef} 
                 id="player" 
-                muted 
                 playsInline 
                 className="w-full h-full"
                 style={{
                   filter: 'contrast(1.1) brightness(0.9) saturate(0.8)',
                 }}
-                // Custom video controls
-                controls={false}
                 onContextMenu={(e) => e.preventDefault()}
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
               ></video>
 
-              {/* Custom Video Controls */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {/* Volume Control */}
-                    <button 
-                      onClick={() => {
-                        if (videoRef.current) {
-                          videoRef.current.muted = !videoRef.current.muted;
-                        }
-                      }}
-                      className="text-green-400 hover:text-green-300 transition-colors"
-                    >
-                      {videoRef.current?.muted ? '🔇' : '🔊'}
-                    </button>
-                  </div>
-                  <div className="text-green-400 text-sm tracking-wider">
-                    MIDNIGHT SIGNAL
-                  </div>
-                </div>
+              {/* Audio Controls */}
+              <div className={`audio-controls transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                <button 
+                  onClick={toggleMute}
+                  className="audio-button"
+                >
+                  {isMuted ? '🔇' : '🔊'}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  className="volume-slider"
+                />
               </div>
             </div>
           </div>
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-green-600 text-sm tracking-wider">
-          <p>FREQUENCY: 24/7 BROADCAST</p>
-          <p>QUALITY: 480P STEREO</p>
-          <p>SOURCE: INTERNET ARCHIVE</p>
+        <div className="mt-8 text-center text-purple-500 text-sm tracking-wider">
+          <div className="flex items-center justify-center space-x-6">
+            <p>FREQUENCY: 24/7 BROADCAST</p>
+            <span>•</span>
+            <p>QUALITY: 480P STEREO</p>
+            <span>•</span>
+            <p>SOURCE: INTERNET ARCHIVE</p>
+          </div>
         </div>
 
-        {/* Static Noise Effect (subtle) */}
-        <div className="absolute inset-0 pointer-events-none z-5 opacity-5">
-          <div className="w-full h-full" style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
-          }}></div>
-        </div>
+        {/* Scanline Effect */}
+        <div className="scanline"></div>
       </main>
     </div>
   );
