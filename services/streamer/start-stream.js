@@ -124,15 +124,23 @@ function startPlaylistStreaming(playlistPath) {
     
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
     
-    // FFmpeg writes progress to stderr, not stdout
+    // Reduced logging to avoid Railway rate limits
+    let lastLogTime = Date.now();
     ffmpeg.stderr.on('data', (data) => {
         const output = data.toString();
-        // Only log actual errors, not normal progress output
+        const now = Date.now();
+        
+        // Only log errors and important messages, not progress
         if (output.includes('Error') || output.includes('error') || output.includes('failed')) {
             console.error(`FFMPEG_ERROR: ${output}`);
-        } else {
-            console.log(`FFMPEG_LOG: ${output}`);
+        } else if (output.includes('Opening') || output.includes('Duration') || output.includes('Stream')) {
+            // Log important info but limit frequency
+            if (now - lastLogTime > 10000) { // Only log every 10 seconds
+                console.log(`FFMPEG_INFO: ${output.split('\n')[0]}`); // Only first line
+                lastLogTime = now;
+            }
         }
+        // Skip progress output entirely to reduce log volume
     });
     
     ffmpeg.on('close', (code) => {
@@ -170,15 +178,23 @@ function startSingleVideoStreaming(videoFile) {
     
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
     
-    // FFmpeg writes progress to stderr, not stdout
+    // Reduced logging to avoid Railway rate limits
+    let lastLogTime = Date.now();
     ffmpeg.stderr.on('data', (data) => {
         const output = data.toString();
-        // Only log actual errors, not normal progress output
+        const now = Date.now();
+        
+        // Only log errors and important messages, not progress
         if (output.includes('Error') || output.includes('error') || output.includes('failed')) {
             console.error(`FFMPEG_ERROR: ${output}`);
-        } else {
-            console.log(`FFMPEG_LOG: ${output}`);
+        } else if (output.includes('Opening') || output.includes('Duration') || output.includes('Stream')) {
+            // Log important info but limit frequency
+            if (now - lastLogTime > 10000) { // Only log every 10 seconds
+                console.log(`FFMPEG_INFO: ${output.split('\n')[0]}`); // Only first line
+                lastLogTime = now;
+            }
         }
+        // Skip progress output entirely to reduce log volume
     });
     
     ffmpeg.on('close', (code) => {
