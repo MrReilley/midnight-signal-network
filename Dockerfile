@@ -37,8 +37,12 @@ RUN npm install express
 # ---- Copy the application code ----
 # Copy curator files to the correct location
 COPY services/curator/curator.py ./curator/
+COPY services/curator/test_curator.py ./curator/
 # Copy streamer files
 COPY services/streamer/start-stream.js ./
+
+# ---- Test Python environment ----
+RUN echo "--- Testing Python environment ---" && python3 ./curator/test_curator.py
 
 # Expose the port the app runs on
 EXPOSE 3000
