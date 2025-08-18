@@ -8,14 +8,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
-    nodejs \
     python3 \
     python3-pip \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install a modern version of Node.js
-RUN npm install -g n && n lts && npm install -g npm@latest
+# Install Node.js using the official NodeSource repository
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # Set the main application directory
 WORKDIR /app
