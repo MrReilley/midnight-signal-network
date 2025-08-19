@@ -4,11 +4,80 @@ import sys
 import json
 import random
 import time
+import subprocess
 
 VIDEO_DIR = '/app/content/main_channel'
 PLAYLIST_FILE = '/app/content/playlist.txt'
 MAX_VIDEOS = 5  # Reduced to 5 videos for faster startup
 MAX_DURATION = 10 * 60  # 10 minutes max per video (shorter videos)
+
+def validate_and_convert_video(input_path, output_path):
+    """Validate and convert video to ensure it's compatible with FFmpeg streaming"""
+    try:
+        # First, check if the video is valid
+        probe_cmd = [
+            'ffprobe', '-v', 'quiet', '-print_format', 'json', 
+            '-show_format', '-show_streams', input_path
+        ]
+        
+        result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode != 0:
+            print(f"  ✗ Invalid video file: {input_path}")
+            return False
+        
+        # Parse the probe output
+        try:
+            probe_data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            print(f"  ✗ Could not parse video metadata: {input_path}")
+            return False
+        
+        # Check if video stream exists
+        video_streams = [s for s in probe_data.get('streams', []) if s.get('codec_type') == 'video']
+        if not video_streams:
+            print(f"  ✗ No video stream found: {input_path}")
+            return False
+        
+        # Convert to a compatible format
+        convert_cmd = [
+            'ffmpeg', '-i', input_path,
+            '-c:v', 'libx264',  # Use H.264 codec
+            '-c:a', 'aac',      # Use AAC audio codec
+            '-preset', 'fast',   # Fast encoding
+            '-crf', '23',       # Good quality
+            '-y',               # Overwrite output
+            output_path
+        ]
+        
+        print(f"  Converting video to compatible format...")
+        result = subprocess.run(convert_cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            print(f"  ✗ Video conversion failed: {result.stderr}")
+            return False
+        
+        # Verify the converted video
+        verify_cmd = [
+            'ffprobe', '-v', 'quiet', '-print_format', 'json', 
+            '-show_format', '-show_streams', output_path
+        ]
+        
+        result = subprocess.run(verify_cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            print(f"  ✓ Video converted successfully")
+            return True
+        else:
+            print(f"  ✗ Converted video validation failed")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print(f"  ✗ Video processing timed out")
+        return False
+    except Exception as e:
+        print(f"  ✗ Video processing error: {e}")
+        return False
 
 def search_internet_archive():
     """Search Internet Archive for short videos"""
@@ -202,8 +271,9 @@ def download_video(video_info, index):
         print(f"Could not get download URL for {video_id}")
         return False
     
-    filename = f"video_{index + 1:02d}_{video_id}.mp4"
-    filepath = os.path.join(VIDEO_DIR, filename)
+    # Download to temporary file first
+    temp_filename = f"temp_{index + 1:02d}_{video_id}.mp4"
+    temp_filepath = os.path.join(VIDEO_DIR, temp_filename)
     
     try:
         response = requests.get(download_url, stream=True, timeout=60)
@@ -213,7 +283,7 @@ def download_video(video_info, index):
         downloaded = 0
         last_log_time = time.time()
         
-        with open(filepath, 'wb') as f:
+        with open(temp_filepath, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
@@ -228,16 +298,32 @@ def download_video(video_info, index):
                         last_log_time = current_time
         
         # Verify download
-        if os.path.exists(filepath):
-            file_size = os.path.getsize(filepath)
-            print(f"  ✓ Downloaded successfully ({file_size} bytes)")
-            return filename
-        else:
+        if not os.path.exists(temp_filepath):
             print(f"  ✗ Download failed")
+            return False
+        
+        file_size = os.path.getsize(temp_filepath)
+        print(f"  ✓ Downloaded successfully ({file_size} bytes)")
+        
+        # Convert to compatible format
+        final_filename = f"video_{index + 1:02d}_{video_id}.mp4"
+        final_filepath = os.path.join(VIDEO_DIR, final_filename)
+        
+        if validate_and_convert_video(temp_filepath, final_filepath):
+            # Remove temporary file
+            os.remove(temp_filepath)
+            return final_filename
+        else:
+            # Remove failed temporary file
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
             return False
             
     except Exception as e:
         print(f"  ✗ Download error: {e}")
+        # Clean up temporary file if it exists
+        if os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
         return False
 
 def create_playlist(video_files):
