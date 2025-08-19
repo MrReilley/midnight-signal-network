@@ -8,6 +8,7 @@ const streamUrl = 'https://midnight-signal-network-production.up.railway.app/str
 export default function HomePage() {
   const videoRef = useRef(null);
   const hlsInstance = useRef(null);
+  const videoContainerRef = useRef(null);
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +16,11 @@ export default function HomePage() {
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentVideo, setCurrentVideo] = useState('Loading...');
+  const [nextVideo, setNextVideo] = useState('Loading...');
 
   useEffect(() => {
     const video = videoRef.current;
@@ -33,7 +39,13 @@ export default function HomePage() {
       }
     };
     video.addEventListener('seeking', preventSeek);
-    // --- End Prevent Seeking ---
+
+    // Update time display
+    const updateTime = () => {
+      setCurrentTime(video.currentTime);
+      setDuration(video.duration);
+    };
+    video.addEventListener('timeupdate', updateTime);
 
     if (Hls.isSupported()) {
       const hls = new Hls();
@@ -60,6 +72,14 @@ export default function HomePage() {
           setIsLive(false);
         }
       });
+
+      // Listen for segment changes to update video info
+      hls.on(Hls.Events.FRAG_LOADED, () => {
+        // This is a simplified approach - in a real implementation you'd track playlist changes
+        setCurrentVideo('Random Archive Video');
+        setNextVideo('Random Archive Video');
+      });
+
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support
       video.src = streamUrl;
@@ -69,6 +89,7 @@ export default function HomePage() {
     // --- Cleanup ---
     return () => {
       video.removeEventListener('seeking', preventSeek);
+      video.removeEventListener('timeupdate', updateTime);
       if (hlsInstance.current) {
         hlsInstance.current.destroy();
       }
@@ -103,11 +124,34 @@ export default function HomePage() {
     }
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      videoContainerRef.current?.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatTimeLeft = () => {
+    if (!duration || !currentTime) return '00:00';
+    const timeLeft = duration - currentTime;
+    return formatTime(timeLeft);
+  };
+
   return (
-    <div className="min-h-screen crt-screen" onClick={handleUserInteraction}>
+    <div className="min-h-screen crt-screen dark-theme" onClick={handleUserInteraction}>
       <main className="relative flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-center mb-6 z-10">
-          <h1 className="text-5xl md:text-7xl font-bold text-cyan-300 mb-2 text-glow uppercase">
+          <h1 className="text-4xl md:text-6xl font-bold text-cyan-300 mb-2 text-glow uppercase">
             Midnight Signal
           </h1>
           <p className="text-lg text-gray-400 text-subtle-glow">
@@ -115,7 +159,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="relative w-full max-w-4xl z-10 video-frame">
+        <div className="relative w-full max-w-4xl z-10 video-frame" ref={videoContainerRef}>
           <div
             className="relative bg-black aspect-video"
             onMouseEnter={() => setShowControls(true)}
@@ -144,6 +188,25 @@ export default function HomePage() {
               onContextMenu={(e) => e.preventDefault()}
             ></video>
 
+            {/* Video Info Panel */}
+            <div className={`video-info transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="video-info-title">{currentVideo}</div>
+              <div className="video-info-time">
+                {formatTime(currentTime)} / {formatTime(duration)} (-{formatTimeLeft()})
+              </div>
+              <div className="video-info-next">
+                Next: {nextVideo}
+              </div>
+            </div>
+
+            {/* Fullscreen Button */}
+            <button 
+              onClick={toggleFullscreen}
+              className={`fullscreen-button transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
+            >
+              {isFullscreen ? '⛶' : '⛶'}
+            </button>
+
             <div
               className={`transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
             >
@@ -166,7 +229,7 @@ export default function HomePage() {
         </div>
         
         <div className="mt-6 text-center text-xs text-gray-600 tracking-widest z-10">
-            <p>&gt; 24/7 BROADCAST :: SOURCE: PUBLIC DOMAIN ARCHIVES :: 480P STEREO_</p>
+          <p>&gt; 24/7 BROADCAST :: SOURCE: PUBLIC DOMAIN ARCHIVES :: 480P STEREO_</p>
         </div>
       </main>
     </div>
