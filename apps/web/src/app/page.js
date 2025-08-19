@@ -17,8 +17,6 @@ export default function HomePage() {
   const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [currentVideo, setCurrentVideo] = useState('Midnight Signal');
   const [nextVideo, setNextVideo] = useState('Random Archive Content');
 
@@ -39,13 +37,6 @@ export default function HomePage() {
       }
     };
     video.addEventListener('seeking', preventSeek);
-
-    // Update time display
-    const updateTime = () => {
-      setCurrentTime(video.currentTime);
-      setDuration(video.duration);
-    };
-    video.addEventListener('timeupdate', updateTime);
 
     // Update video info periodically
     const updateVideoInfo = () => {
@@ -109,7 +100,6 @@ export default function HomePage() {
     // --- Cleanup ---
     return () => {
       video.removeEventListener('seeking', preventSeek);
-      video.removeEventListener('timeupdate', updateTime);
       clearInterval(videoInfoInterval);
       if (hlsInstance.current) {
         hlsInstance.current.destroy();
@@ -155,65 +145,51 @@ export default function HomePage() {
     }
   };
 
-  const formatTime = (seconds) => {
-    if (!seconds || isNaN(seconds)) return '00:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatTimeLeft = () => {
-    if (!duration || !currentTime) return '00:00';
-    const timeLeft = duration - currentTime;
-    return formatTime(timeLeft);
-  };
-
   return (
-    <div className="min-h-screen dark-theme text-gray-100" onClick={handleUserInteraction}>
-      <main className="relative flex flex-col items-center justify-center min-h-screen p-6">
+    <div className="min-h-screen bg-black text-white" onClick={handleUserInteraction}>
+      <main className="relative flex flex-col items-center justify-center min-h-screen p-4">
+        {/* Header */}
         <div className="text-center mb-8 z-10">
-          <h1 className="heading-primary text-white mb-3">
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
             Midnight Signal
           </h1>
-          <p className="heading-secondary text-gray-400">
+          <p className="text-gray-400 text-sm font-medium tracking-wide">
             Broadcasting from the digital ether
           </p>
           {isLive && (
-            <div className="flex items-center justify-center space-x-3 mt-4">
+            <div className="flex items-center justify-center mt-4">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="body-text text-red-400 font-medium">LIVE</span>
+                <span className="text-red-400 text-sm font-medium">LIVE</span>
               </div>
-              <span className="text-gray-600">•</span>
-              <span className="body-text text-gray-500">24/7 Broadcast</span>
             </div>
           )}
         </div>
 
-        <div className="relative w-full video-container" ref={videoContainerRef}>
+        {/* Video Container */}
+        <div className="relative w-full max-w-4xl" ref={videoContainerRef}>
           <div
-            className="relative bg-black aspect-video rounded-xl overflow-hidden"
+            className="relative bg-black rounded-lg overflow-hidden shadow-2xl"
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
           >
             {isLoading && (
-              <div className="loading-screen">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-20">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="heading-secondary text-blue-400">Tuning in...</p>
-                  <p className="body-text text-gray-500 mt-2">Establishing connection to broadcast</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-blue-400 text-sm font-medium">Tuning in...</p>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="error-screen">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-20">
                 <div className="text-center">
-                  <div className="text-red-400 text-4xl mb-4">⚠</div>
-                  <p className="heading-secondary text-red-400 mb-4">{error}</p>
+                  <div className="text-red-400 text-3xl mb-4">⚠</div>
+                  <p className="text-red-400 text-sm font-medium mb-4">{error}</p>
                   <button 
                     onClick={() => window.location.reload()} 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     Retry Connection
                   </button>
@@ -230,12 +206,9 @@ export default function HomePage() {
             ></video>
 
             {/* Video Info Panel */}
-            <div className={`video-info transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="video-info-title">{currentVideo}</div>
-              <div className="video-info-time">
-                {formatTime(currentTime)} / {formatTime(duration)} (-{formatTimeLeft()})
-              </div>
-              <div className="video-info-next">
+            <div className={`absolute top-4 left-4 z-50 bg-black/80 backdrop-blur-sm border border-gray-800 p-3 rounded-md max-w-xs transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="text-white text-sm font-medium mb-1">{currentVideo}</div>
+              <div className="text-gray-400 text-xs pt-1 border-t border-gray-700">
                 Next: {nextVideo}
               </div>
             </div>
@@ -243,39 +216,41 @@ export default function HomePage() {
             {/* Fullscreen Button */}
             <button 
               onClick={toggleFullscreen}
-              className={`fullscreen-button transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
+              className={`absolute top-4 right-4 z-50 bg-black/80 backdrop-blur-sm border border-gray-800 text-gray-300 hover:text-white p-2 rounded-md transition-all duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
             >
               {isFullscreen ? '⛶' : '⛶'}
             </button>
 
-            <div
-              className={`transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <div className="audio-controls">
-                <button onClick={toggleMute} className="audio-button">
+            {/* Audio Controls */}
+            <div className={`absolute bottom-4 left-4 z-50 transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-gray-800 p-3 rounded-md">
+                <button onClick={toggleMute} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
                   {isMuted || volume === 0 ? 'MUTE' : 'UNMUTE'}
                 </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="volume-slider"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="volume-slider"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
         
+        {/* Footer */}
         <div className="mt-8 text-center">
-          <div className="flex items-center justify-center space-x-6">
-            <p className="mono-text text-gray-500">FREQUENCY: 24/7 BROADCAST</p>
-            <span className="text-gray-600">•</span>
-            <p className="mono-text text-gray-500">QUALITY: 480P STEREO</p>
-            <span className="text-gray-600">•</span>
-            <p className="mono-text text-gray-500">SOURCE: INTERNET ARCHIVE</p>
+          <div className="flex items-center justify-center space-x-6 text-xs text-gray-500 font-mono">
+            <span>FREQUENCY: 24/7 BROADCAST</span>
+            <span>•</span>
+            <span>QUALITY: 480P STEREO</span>
+            <span>•</span>
+            <span>SOURCE: INTERNET ARCHIVE</span>
           </div>
         </div>
       </main>

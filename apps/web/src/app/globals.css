@@ -10,50 +10,8 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Clean Dark Theme */
-.dark-theme {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
-}
-
-/* Video Container */
-.video-container {
-  @apply bg-black border border-gray-800 rounded-xl shadow-2xl;
-  max-width: 900px;
-  width: 100%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-/* Typography */
-.heading-primary {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 2.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-}
-
-.heading-secondary {
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  font-size: 1rem;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-}
-
-.body-text {
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.mono-text {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  font-weight: 500;
-  font-size: 0.75rem;
-  letter-spacing: 0.025em;
+  background: #000000;
+  color: #ffffff;
 }
 
 /* Video Player Customization */
@@ -66,77 +24,48 @@ video::-webkit-media-controls-start-playback-button {
   -webkit-appearance: none;
 }
 
-/* Audio Controls - Redesigned */
-.audio-controls {
-  @apply absolute bottom-4 left-4 z-50 flex items-center gap-3 bg-black/80 backdrop-blur-md border border-gray-700/50 p-3 rounded-lg;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-}
-
-.audio-button {
-  @apply bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.audio-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
+/* Volume Slider - Fixed */
 .volume-slider {
   -webkit-appearance: none;
   appearance: none;
-  @apply w-24 h-2 bg-gray-700 rounded-full outline-none;
-  background: linear-gradient(to right, #3b82f6 0%, #3b82f6 50%, #374151 50%, #374151 100%);
+  width: 80px;
+  height: 4px;
+  background: #374151;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
 }
 
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  @apply w-4 h-4 bg-white rounded-full cursor-pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .volume-slider::-moz-range-thumb {
-  @apply w-4 h-4 bg-white rounded-full cursor-pointer border-0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Fullscreen Button */
-.fullscreen-button {
-  @apply absolute top-4 right-4 z-50 bg-black/80 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white p-2 rounded-lg transition-all duration-200;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+.volume-slider::-webkit-slider-track {
+  background: #374151;
+  border-radius: 2px;
 }
 
-.fullscreen-button:hover {
-  @apply bg-black/90 border-gray-600/50;
-  transform: translateY(-1px);
-}
-
-/* Video Info Panel - Redesigned */
-.video-info {
-  @apply absolute top-4 left-4 z-50 bg-black/80 backdrop-blur-md border border-gray-700/50 p-4 rounded-lg max-w-xs;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-}
-
-.video-info-title {
-  @apply text-white text-sm font-semibold mb-2;
-}
-
-.video-info-time {
-  @apply text-gray-300 text-xs mb-2;
-}
-
-.video-info-next {
-  @apply text-gray-400 text-xs pt-2 border-t border-gray-600/50;
-}
-
-/* Loading and Error States */
-.loading-screen {
-  @apply absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-20;
-}
-
-.error-screen {
-  @apply absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-20;
+.volume-slider::-moz-range-track {
+  background: #374151;
+  border-radius: 2px;
+  height: 4px;
 }
 
 /* Custom Scrollbar */
