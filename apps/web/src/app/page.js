@@ -7,6 +7,8 @@ const streamUrl = 'https://midnight-signal-network-production.up.railway.app/str
 
 export default function HomePage() {
   const videoRef = useRef(null);
+  const hlsInstance = useRef(null);
+
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
@@ -18,79 +20,68 @@ export default function HomePage() {
     const video = videoRef.current;
     if (!video) return;
 
-    console.log('Attempting to load stream from:', streamUrl);
+    // --- Prevent Seeking ---
+    const preventSeek = () => {
+      // Snap back to the live edge if a seek is attempted
+      if (hlsInstance.current && video.duration) {
+        const liveEdge = hlsInstance.current.liveSyncPosition;
+        // A buffer of 1 second helps prevent constant snapping on minor delays
+        if (liveEdge && Math.abs(video.currentTime - liveEdge) > 1) {
+          console.log("Seek attempt blocked. Snapping back to live.");
+          video.currentTime = liveEdge;
+        }
+      }
+    };
+    video.addEventListener('seeking', preventSeek);
+    // --- End Prevent Seeking ---
 
     if (Hls.isSupported()) {
-      const hls = new Hls({
-        debug: false,
-        enableWorker: true,
-        lowLatencyMode: true,
-      });
+      const hls = new Hls();
+      hlsInstance.current = hls; // Store instance for seeking logic
 
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed successfully');
         setIsLoading(false);
         setIsLive(true);
         video.volume = volume;
         video.muted = isMuted;
-        video.play().catch((e) => {
-          console.log("Autoplay was blocked by the browser:", e);
-          setError("Click to start broadcast");
+        video.play().catch(() => {
+          setError("Click anywhere to start broadcast");
+          setIsLoading(false);
         });
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS Error:', data);
         if (data.fatal) {
-          setError(`Signal lost: ${data.details}`);
+          setError(`Signal Lost: ${data.details}`);
           setIsLoading(false);
           setIsLive(false);
         }
       });
-
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        console.log('HLS media attached');
-      });
-
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      console.log('Using native HLS support');
+      // Native HLS support
       video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
-        setIsLoading(false);
-        setIsLive(true);
-        video.volume = volume;
-        video.muted = isMuted;
-        video.play().catch((e) => {
-          console.log("Autoplay was blocked by the browser:", e);
-          setError("Click to start broadcast");
-        });
-      });
-    } else {
-      setError('Broadcast not supported in this browser');
-      setIsLoading(false);
+      // ... (add native support logic here if needed)
     }
 
-    // Test the stream URL directly
-    fetch(streamUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.text();
-      })
-      .then(data => {
-        console.log('Stream URL is accessible, manifest content:', data.substring(0, 200));
-      })
-      .catch(err => {
-        console.error('Stream URL test failed:', err);
-        setError(`Cannot access broadcast: ${err.message}`);
-        setIsLoading(false);
-      });
+    // --- Cleanup ---
+    return () => {
+      video.removeEventListener('seeking', preventSeek);
+      if (hlsInstance.current) {
+        hlsInstance.current.destroy();
+      }
+    };
+  }, [isMuted, volume]);
 
-  }, []);
+  const handleUserInteraction = () => {
+    // This allows the user to start playback if autoplay is blocked
+    if (videoRef.current && videoRef.current.paused) {
+      videoRef.current.play();
+      setError(null);
+    }
+  };
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -102,9 +93,9 @@ export default function HomePage() {
 
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
     if (videoRef.current) {
       videoRef.current.volume = newVolume;
-      setVolume(newVolume);
       if (newVolume > 0 && isMuted) {
         setIsMuted(false);
         videoRef.current.muted = false;
@@ -113,102 +104,59 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen professional-dark text-gray-100 overflow-hidden">
-      {/* Main Content */}
-      <main className="relative flex flex-col items-center justify-center min-h-screen p-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="heading-primary text-white mb-3">
+    <div className="min-h-screen crt-screen" onClick={handleUserInteraction}>
+      <main className="relative flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-center mb-6 z-10">
+          <h1 className="text-5xl md:text-7xl font-bold text-cyan-300 mb-2 text-glow uppercase">
             Midnight Signal
           </h1>
-          <p className="heading-secondary text-gray-300 mb-4">
-            Broadcasting from the digital ether
+          <p className="text-lg text-gray-400 text-subtle-glow">
+            Broadcasting from the digital ether...
           </p>
-          {isLive && (
-            <div className="flex items-center justify-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="body-text text-red-400 font-medium">LIVE</span>
-              </div>
-              <span className="text-gray-500">•</span>
-              <span className="body-text text-gray-400">24/7 Broadcast</span>
-            </div>
-          )}
         </div>
 
-        {/* Video Container */}
-        <div className="relative w-full max-w-6xl">
-          {/* Video Frame */}
-          <div className="glass-panel rounded-2xl p-1 subtle-glow">
-            <div 
-              className="relative bg-black rounded-xl overflow-hidden aspect-video"
-              onMouseEnter={() => setShowControls(true)}
-              onMouseLeave={() => setShowControls(false)}
+        <div className="relative w-full max-w-4xl z-10 video-frame">
+          <div
+            className="relative bg-black aspect-video"
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+          >
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                <p className="text-2xl text-glow animate-pulse">TUNING SIGNAL...</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black z-20 p-4">
+                <div className="text-center">
+                  <p className="text-2xl text-red-500 text-glow mb-4">SIGNAL LOST</p>
+                  <p className="text-lg text-red-500/80">{error}</p>
+                </div>
+              </div>
+            )}
+            
+            <video
+              ref={videoRef}
+              id="player"
+              playsInline
+              className="w-full h-full"
+              onContextMenu={(e) => e.preventDefault()}
+            ></video>
+
+            <div
+              className={`transition-opacity duration-300 ${showControls || !isLive ? 'opacity-100' : 'opacity-0'}`}
             >
-              {/* Live Indicator */}
-              {isLive && (
-                <div className="absolute top-4 right-4 z-30">
-                  <div className="flex items-center space-x-2 bg-black/80 px-3 py-1 rounded-full">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="body-text text-red-400 font-medium">LIVE</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading Screen */}
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="heading-secondary text-blue-400">Tuning in...</p>
-                    <p className="body-text text-gray-500 mt-2">Establishing connection to broadcast</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Error Screen */}
-              {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
-                  <div className="text-center p-8">
-                    <div className="text-red-400 text-4xl mb-4">⚠</div>
-                    <p className="heading-secondary text-red-400 mb-4">{error}</p>
-                    <button 
-                      onClick={() => window.location.reload()} 
-                      className="professional-button"
-                    >
-                      Retry Connection
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Video Player */}
-              <video 
-                ref={videoRef} 
-                id="player" 
-                playsInline 
-                className="w-full h-full object-cover"
-                onContextMenu={(e) => e.preventDefault()}
-              ></video>
-
-              {/* Audio Controls */}
-              <div 
-                className={`audio-controls transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
-                onMouseEnter={() => setShowControls(true)}
-                onMouseLeave={() => setShowControls(false)}
-              >
-                <button 
-                  onClick={toggleMute}
-                  className="audio-button"
-                >
-                  {isMuted ? '🔇' : '🔊'}
+              <div className="audio-controls">
+                <button onClick={toggleMute} className="audio-button">
+                  {isMuted || volume === 0 ? 'MUTE' : 'UNMUTE'}
                 </button>
                 <input
                   type="range"
                   min="0"
                   max="1"
                   step="0.1"
-                  value={volume}
+                  value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
                   className="volume-slider"
                 />
@@ -216,16 +164,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
-        {/* Footer Info */}
-        <div className="mt-8 text-center">
-          <div className="flex items-center justify-center space-x-6">
-            <p className="mono-text text-gray-500">FREQUENCY: 24/7 BROADCAST</p>
-            <span className="text-gray-600">•</span>
-            <p className="mono-text text-gray-500">QUALITY: 480P STEREO</p>
-            <span className="text-gray-600">•</span>
-            <p className="mono-text text-gray-500">SOURCE: INTERNET ARCHIVE</p>
-          </div>
+        
+        <div className="mt-6 text-center text-xs text-gray-600 tracking-widest z-10">
+            <p>&gt; 24/7 BROADCAST :: SOURCE: PUBLIC DOMAIN ARCHIVES :: 480P STEREO_</p>
         </div>
       </main>
     </div>

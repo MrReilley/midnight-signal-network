@@ -2,195 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Typography */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/*
+  FONT: Import a pixelated, retro font.
+  VT323 is perfect for a 90s computer terminal feel.
+*/
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
-/* Custom CSS Classes */
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    @apply bg-black text-cyan-300 font-mono antialiased;
+    /* Apply the retro font globally */
+    font-family: 'VT323', monospace;
+    /* BACKGROUND: Add a subtle static/noise texture */
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.05"/%3E%3C/svg%3E');
+  }
 }
 
-/* Professional Dark Theme */
-.professional-dark {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+/* 
+  COMPONENT: The main page container with CRT effects
+*/
+.crt-screen {
+  position: relative;
+  overflow: hidden;
+  /* EFFECT: Add scanlines over the entire page */
+  &::after {
+    content: ' ';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 6px 100%;
+    z-index: 9999; /* Ensure it's on top of everything */
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
 }
 
-/* Glass Effect */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+/* 
+  COMPONENT: Custom styles for the video player container
+*/
+.video-frame {
+  @apply bg-black border-4 border-gray-800 rounded-none shadow-2xl;
+  /* EFFECT: Add a glow effect that pulses */
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.2), 0 0 40px rgba(75, 0, 130, 0.3);
+  animation: pulse-glow 5s infinite ease-in-out;
 }
 
-/* Subtle Glow */
-.subtle-glow {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+/* 
+  COMPONENT: Text styles with a glowing, CRT feel
+*/
+.text-glow {
+  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
 }
 
-/* Professional Button */
-.professional-button {
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+.text-subtle-glow {
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
 }
 
-.professional-button:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-}
-
-.professional-button:active {
-  transform: translateY(0);
-}
-
-/* Typography */
-.heading-primary {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 2.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-}
-
-.heading-secondary {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 1.125rem;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-}
-
-.body-text {
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.mono-text {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  font-weight: 500;
-  font-size: 0.75rem;
-  letter-spacing: 0.025em;
-}
-
-/* Video Player Customization */
-video::-webkit-media-controls {
-  display: none !important;
-}
-
-video::-webkit-media-controls-panel {
-  display: none !important;
-}
-
-video::-webkit-media-controls-play-button {
-  display: none !important;
-}
-
+/*
+  COMPONENT: Hide the default video controls completely
+*/
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
 video::-webkit-media-controls-start-playback-button {
   display: none !important;
+  -webkit-appearance: none;
 }
 
-/* Audio Controls */
+/*
+  COMPONENT: Custom audio controls with a retro feel
+*/
 .audio-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  z-index: 50;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 12px 16px;
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
+  @apply absolute bottom-3 left-3 z-50 flex items-center gap-3 bg-black/50 border border-cyan-500/30 p-2;
 }
 
 .audio-button {
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #dbeafe;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.audio-button:hover {
-  background: rgba(59, 130, 246, 0.3);
-  border-color: rgba(59, 130, 246, 0.5);
+  @apply bg-transparent text-cyan-300 text-lg p-1;
 }
 
 .volume-slider {
   -webkit-appearance: none;
   appearance: none;
-  width: 80px;
-  height: 4px;
-  background: rgba(59, 130, 246, 0.2);
-  border-radius: 2px;
-  outline: none;
+  @apply w-24 h-1 bg-cyan-900/50 outline-none;
 }
 
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
-  background: #3b82f6;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  @apply w-2 h-4 bg-cyan-300 cursor-pointer;
+  box-shadow: 0 0 5px #00ffff;
 }
 
 .volume-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: #3b82f6;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  @apply w-2 h-4 bg-cyan-300 cursor-pointer;
+  box-shadow: 0 0 5px #00ffff;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+/* 
+  ANIMATION: For the CRT flicker and pulsing glow
+*/
+@keyframes flicker {
+  0% { opacity: 0.2; }
+  2% { opacity: 0.8; }
+  4% { opacity: 0.2; }
+  10% { opacity: 0.8; }
+  10.2% { opacity: 0.1; }
+  10.8% { opacity: 1; }
+  100% { opacity: 1; }
 }
 
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #3b82f6;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
-}
-
-/* Selection Color */
-::selection {
-  background: #3b82f6;
-  color: #ffffff;
-}
-
-::-moz-selection {
-  background: #3b82f6;
-  color: #ffffff;
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.2), 0 0 40px rgba(75, 0, 130, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 0 30px rgba(0, 255, 255, 0.4), 0 0 50px rgba(75, 0, 130, 0.5); }
+  100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.2), 0 0 40px rgba(75, 0, 130, 0.3); }
 }
