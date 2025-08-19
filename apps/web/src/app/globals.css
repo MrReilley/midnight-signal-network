@@ -2,70 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  FONT: Import a pixelated, retro font.
-  VT323 is perfect for a 90s computer terminal feel.
-*/
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+/* Modern Typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@layer base {
-  body {
-    @apply bg-gray-900 text-cyan-300 font-mono antialiased;
-    /* Apply the retro font globally */
-    font-family: 'VT323', monospace;
-    /* BACKGROUND: Add a subtle static/noise texture */
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.03"/%3E%3C/svg%3E');
-  }
+/* Base Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* 
-  COMPONENT: The main page container with subtle CRT effects
-*/
-.crt-screen {
-  position: relative;
-  overflow: hidden;
-  /* EFFECT: Add subtle scanlines over the entire page */
-  &::after {
-    content: ' ';
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-    background-size: 100% 4px;
-    z-index: 9999; /* Ensure it's on top of everything */
-    pointer-events: none;
-    animation: flicker 0.15s infinite;
-  }
+/* Clean Dark Theme */
+.dark-theme {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
 }
 
-/* 
-  COMPONENT: Custom styles for the video player container - smaller and centered
-*/
-.video-frame {
-  @apply bg-black border-2 border-gray-700 rounded-lg shadow-2xl;
-  /* EFFECT: Add a subtle glow effect */
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), 0 0 30px rgba(0, 255, 255, 0.05);
-  max-width: 800px; /* Limit maximum width */
+/* Video Container */
+.video-container {
+  @apply bg-black border border-gray-800 rounded-xl shadow-2xl;
+  max-width: 900px;
   width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-/* 
-  COMPONENT: Text styles with a glowing, CRT feel
-*/
-.text-glow {
-  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
+/* Typography */
+.heading-primary {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
-.text-subtle-glow {
-  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+.heading-secondary {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
 }
 
-/*
-  COMPONENT: Hide the default video controls completely
-*/
+.body-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.mono-text {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.025em;
+}
+
+/* Video Player Customization */
 video::-webkit-media-controls,
 video::-webkit-media-controls-enclosure,
 video::-webkit-media-controls-panel,
@@ -75,83 +66,80 @@ video::-webkit-media-controls-start-playback-button {
   -webkit-appearance: none;
 }
 
-/*
-  COMPONENT: Custom audio controls with a retro feel
-*/
+/* Audio Controls - Redesigned */
 .audio-controls {
-  @apply absolute bottom-3 left-3 z-50 flex items-center gap-3 bg-black/70 border border-cyan-500/30 p-2 rounded;
-  backdrop-filter: blur(10px);
+  @apply absolute bottom-4 left-4 z-50 flex items-center gap-3 bg-black/80 backdrop-blur-md border border-gray-700/50 p-3 rounded-lg;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 .audio-button {
-  @apply bg-transparent text-cyan-300 text-sm p-1 hover:text-cyan-200 transition-colors;
+  @apply bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.audio-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .volume-slider {
   -webkit-appearance: none;
   appearance: none;
-  @apply w-20 h-1 bg-cyan-900/50 outline-none;
+  @apply w-24 h-2 bg-gray-700 rounded-full outline-none;
+  background: linear-gradient(to right, #3b82f6 0%, #3b82f6 50%, #374151 50%, #374151 100%);
 }
 
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  @apply w-2 h-4 bg-cyan-300 cursor-pointer;
-  box-shadow: 0 0 5px #00ffff;
+  @apply w-4 h-4 bg-white rounded-full cursor-pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .volume-slider::-moz-range-thumb {
-  @apply w-2 h-4 bg-cyan-300 cursor-pointer;
-  box-shadow: 0 0 5px #00ffff;
+  @apply w-4 h-4 bg-white rounded-full cursor-pointer border-0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/*
-  COMPONENT: Fullscreen button
-*/
+/* Fullscreen Button */
 .fullscreen-button {
-  @apply absolute top-3 right-3 z-50 bg-black/70 border border-cyan-500/30 text-cyan-300 p-2 rounded hover:text-cyan-200 transition-colors;
-  backdrop-filter: blur(10px);
+  @apply absolute top-4 right-4 z-50 bg-black/80 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white p-2 rounded-lg transition-all duration-200;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
-/*
-  COMPONENT: Video info panel
-*/
+.fullscreen-button:hover {
+  @apply bg-black/90 border-gray-600/50;
+  transform: translateY(-1px);
+}
+
+/* Video Info Panel - Redesigned */
 .video-info {
-  @apply absolute top-3 left-3 z-50 bg-black/70 border border-cyan-500/30 p-3 rounded max-w-xs;
-  backdrop-filter: blur(10px);
+  @apply absolute top-4 left-4 z-50 bg-black/80 backdrop-blur-md border border-gray-700/50 p-4 rounded-lg max-w-xs;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 .video-info-title {
-  @apply text-cyan-300 text-sm font-bold mb-1;
+  @apply text-white text-sm font-semibold mb-2;
 }
 
 .video-info-time {
-  @apply text-cyan-400 text-xs;
+  @apply text-gray-300 text-xs mb-2;
 }
 
 .video-info-next {
-  @apply text-gray-400 text-xs mt-2 pt-2 border-t border-gray-600;
+  @apply text-gray-400 text-xs pt-2 border-t border-gray-600/50;
 }
 
-/* 
-  ANIMATION: For the CRT flicker
-*/
-@keyframes flicker {
-  0% { opacity: 0.98; }
-  2% { opacity: 1; }
-  4% { opacity: 0.98; }
-  10% { opacity: 1; }
-  10.2% { opacity: 0.95; }
-  10.8% { opacity: 1; }
-  100% { opacity: 1; }
+/* Loading and Error States */
+.loading-screen {
+  @apply absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-20;
 }
 
-/* Dark theme improvements */
-.dark-theme {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+.error-screen {
+  @apply absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-20;
 }
 
-/* Custom scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -161,21 +149,21 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #00ffff;
+  background: #3b82f6;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00cccc;
+  background: #2563eb;
 }
 
 /* Selection Color */
 ::selection {
-  background: #00ffff;
-  color: #000000;
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 ::-moz-selection {
-  background: #00ffff;
-  color: #000000;
+  background: #3b82f6;
+  color: #ffffff;
 }

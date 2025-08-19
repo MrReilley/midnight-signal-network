@@ -19,8 +19,8 @@ export default function HomePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [currentVideo, setCurrentVideo] = useState('Loading...');
-  const [nextVideo, setNextVideo] = useState('Loading...');
+  const [currentVideo, setCurrentVideo] = useState('Midnight Signal');
+  const [nextVideo, setNextVideo] = useState('Random Archive Content');
 
   useEffect(() => {
     const video = videoRef.current;
@@ -46,6 +46,33 @@ export default function HomePage() {
       setDuration(video.duration);
     };
     video.addEventListener('timeupdate', updateTime);
+
+    // Update video info periodically
+    const updateVideoInfo = () => {
+      // Simulate video changes every 5-10 minutes for a live stream feel
+      const videos = [
+        'Classic Commercial (1950s)',
+        'Educational Film (1960s)',
+        'Industrial Documentary (1970s)',
+        'Public Service Announcement (1980s)',
+        'Retro Advertisement (1990s)',
+        'Archive Footage (Various)',
+        'Historical Documentary',
+        'Vintage Animation',
+        'Classic Television',
+        'Public Domain Film'
+      ];
+      
+      const randomVideo = videos[Math.floor(Math.random() * videos.length)];
+      const randomNext = videos[Math.floor(Math.random() * videos.length)];
+      
+      setCurrentVideo(randomVideo);
+      setNextVideo(randomNext);
+    };
+
+    // Update video info every 5 minutes
+    const videoInfoInterval = setInterval(updateVideoInfo, 5 * 60 * 1000);
+    updateVideoInfo(); // Initial update
 
     if (Hls.isSupported()) {
       const hls = new Hls();
@@ -73,13 +100,6 @@ export default function HomePage() {
         }
       });
 
-      // Listen for segment changes to update video info
-      hls.on(Hls.Events.FRAG_LOADED, () => {
-        // This is a simplified approach - in a real implementation you'd track playlist changes
-        setCurrentVideo('Random Archive Video');
-        setNextVideo('Random Archive Video');
-      });
-
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support
       video.src = streamUrl;
@@ -90,6 +110,7 @@ export default function HomePage() {
     return () => {
       video.removeEventListener('seeking', preventSeek);
       video.removeEventListener('timeupdate', updateTime);
+      clearInterval(videoInfoInterval);
       if (hlsInstance.current) {
         hlsInstance.current.destroy();
       }
@@ -148,34 +169,54 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen crt-screen dark-theme" onClick={handleUserInteraction}>
-      <main className="relative flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-center mb-6 z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-cyan-300 mb-2 text-glow uppercase">
+    <div className="min-h-screen dark-theme text-gray-100" onClick={handleUserInteraction}>
+      <main className="relative flex flex-col items-center justify-center min-h-screen p-6">
+        <div className="text-center mb-8 z-10">
+          <h1 className="heading-primary text-white mb-3">
             Midnight Signal
           </h1>
-          <p className="text-lg text-gray-400 text-subtle-glow">
-            Broadcasting from the digital ether...
+          <p className="heading-secondary text-gray-400">
+            Broadcasting from the digital ether
           </p>
+          {isLive && (
+            <div className="flex items-center justify-center space-x-3 mt-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="body-text text-red-400 font-medium">LIVE</span>
+              </div>
+              <span className="text-gray-600">•</span>
+              <span className="body-text text-gray-500">24/7 Broadcast</span>
+            </div>
+          )}
         </div>
 
-        <div className="relative w-full max-w-4xl z-10 video-frame" ref={videoContainerRef}>
+        <div className="relative w-full video-container" ref={videoContainerRef}>
           <div
-            className="relative bg-black aspect-video"
+            className="relative bg-black aspect-video rounded-xl overflow-hidden"
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
           >
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
-                <p className="text-2xl text-glow animate-pulse">TUNING SIGNAL...</p>
+              <div className="loading-screen">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="heading-secondary text-blue-400">Tuning in...</p>
+                  <p className="body-text text-gray-500 mt-2">Establishing connection to broadcast</p>
+                </div>
               </div>
             )}
 
             {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black z-20 p-4">
+              <div className="error-screen">
                 <div className="text-center">
-                  <p className="text-2xl text-red-500 text-glow mb-4">SIGNAL LOST</p>
-                  <p className="text-lg text-red-500/80">{error}</p>
+                  <div className="text-red-400 text-4xl mb-4">⚠</div>
+                  <p className="heading-secondary text-red-400 mb-4">{error}</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    Retry Connection
+                  </button>
                 </div>
               </div>
             )}
@@ -228,8 +269,14 @@ export default function HomePage() {
           </div>
         </div>
         
-        <div className="mt-6 text-center text-xs text-gray-600 tracking-widest z-10">
-          <p>&gt; 24/7 BROADCAST :: SOURCE: PUBLIC DOMAIN ARCHIVES :: 480P STEREO_</p>
+        <div className="mt-8 text-center">
+          <div className="flex items-center justify-center space-x-6">
+            <p className="mono-text text-gray-500">FREQUENCY: 24/7 BROADCAST</p>
+            <span className="text-gray-600">•</span>
+            <p className="mono-text text-gray-500">QUALITY: 480P STEREO</p>
+            <span className="text-gray-600">•</span>
+            <p className="mono-text text-gray-500">SOURCE: INTERNET ARCHIVE</p>
+          </div>
         </div>
       </main>
     </div>
