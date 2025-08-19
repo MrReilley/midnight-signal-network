@@ -113,73 +113,44 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen dark-purple-bg text-purple-200 font-mono overflow-hidden relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20"></div>
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(147, 51, 234, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)',
-        }}></div>
-      </div>
-
-      {/* CRT Scanlines Effect */}
-      <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="w-full h-full" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(147, 51, 234, 0.03) 2px, rgba(147, 51, 234, 0.03) 4px)',
-        }}></div>
-      </div>
-
-      {/* Floating Particles */}
-      <div className="absolute inset-0 pointer-events-none z-5">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-30 float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${3 + Math.random() * 2}s`
-            }}
-          ></div>
-        ))}
-      </div>
-
+    <div className="min-h-screen professional-dark text-gray-100 overflow-hidden">
       {/* Main Content */}
-      <main className="relative z-20 flex flex-col items-center justify-center min-h-screen p-4">
+      <main className="relative flex flex-col items-center justify-center min-h-screen p-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-7xl font-bold mb-4 futuristic-text neon-glow pulse">
-            MIDNIGHT SIGNAL
+          <h1 className="heading-primary text-white mb-3">
+            Midnight Signal
           </h1>
-          <p className="text-purple-300 text-xl tracking-wider neon-glow">
-            BROADCASTING FROM THE DIGITAL ETHER
+          <p className="heading-secondary text-gray-300 mb-4">
+            Broadcasting from the digital ether
           </p>
-          <div className="mt-4 flex items-center justify-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-red-400 font-bold text-sm tracking-wider">LIVE</span>
+          {isLive && (
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="body-text text-red-400 font-medium">LIVE</span>
+              </div>
+              <span className="text-gray-500">•</span>
+              <span className="body-text text-gray-400">24/7 Broadcast</span>
             </div>
-            <span className="text-purple-400 text-sm">•</span>
-            <span className="text-purple-400 text-sm">24/7 BROADCAST</span>
-          </div>
+          )}
         </div>
 
-        {/* TV Frame */}
-        <div className="relative w-full max-w-5xl">
-          {/* TV Border with Glass Effect */}
-          <div className="glass-effect rounded-2xl p-2 neon-border">
+        {/* Video Container */}
+        <div className="relative w-full max-w-6xl">
+          {/* Video Frame */}
+          <div className="glass-panel rounded-2xl p-1 subtle-glow">
             <div 
-              className="relative bg-black rounded-xl overflow-hidden"
+              className="relative bg-black rounded-xl overflow-hidden aspect-video"
               onMouseEnter={() => setShowControls(true)}
               onMouseLeave={() => setShowControls(false)}
             >
               {/* Live Indicator */}
               {isLive && (
                 <div className="absolute top-4 right-4 z-30">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-red-400 font-bold text-sm tracking-wider">LIVE</span>
+                  <div className="flex items-center space-x-2 bg-black/80 px-3 py-1 rounded-full">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="body-text text-red-400 font-medium">LIVE</span>
                   </div>
                 </div>
               )}
@@ -188,9 +159,9 @@ export default function HomePage() {
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
-                    <p className="text-purple-400 text-lg tracking-wider neon-glow">TUNING IN...</p>
-                    <p className="text-purple-600 text-sm mt-2">Establishing connection to broadcast</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="heading-secondary text-blue-400">Tuning in...</p>
+                    <p className="body-text text-gray-500 mt-2">Establishing connection to broadcast</p>
                   </div>
                 </div>
               )}
@@ -200,12 +171,12 @@ export default function HomePage() {
                 <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                   <div className="text-center p-8">
                     <div className="text-red-400 text-4xl mb-4">⚠</div>
-                    <p className="text-red-400 mb-4 text-lg">{error}</p>
+                    <p className="heading-secondary text-red-400 mb-4">{error}</p>
                     <button 
                       onClick={() => window.location.reload()} 
-                      className="retro-button"
+                      className="professional-button"
                     >
-                      RETRY CONNECTION
+                      Retry Connection
                     </button>
                   </div>
                 </div>
@@ -216,10 +187,7 @@ export default function HomePage() {
                 ref={videoRef} 
                 id="player" 
                 playsInline 
-                className="w-full h-full"
-                style={{
-                  filter: 'contrast(1.1) brightness(0.9) saturate(0.8)',
-                }}
+                className="w-full h-full object-cover"
                 onContextMenu={(e) => e.preventDefault()}
               ></video>
 
@@ -250,18 +218,15 @@ export default function HomePage() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-purple-500 text-sm tracking-wider">
+        <div className="mt-8 text-center">
           <div className="flex items-center justify-center space-x-6">
-            <p>FREQUENCY: 24/7 BROADCAST</p>
-            <span>•</span>
-            <p>QUALITY: 480P STEREO</p>
-            <span>•</span>
-            <p>SOURCE: INTERNET ARCHIVE</p>
+            <p className="mono-text text-gray-500">FREQUENCY: 24/7 BROADCAST</p>
+            <span className="text-gray-600">•</span>
+            <p className="mono-text text-gray-500">QUALITY: 480P STEREO</p>
+            <span className="text-gray-600">•</span>
+            <p className="mono-text text-gray-500">SOURCE: INTERNET ARCHIVE</p>
           </div>
         </div>
-
-        {/* Scanline Effect */}
-        <div className="scanline"></div>
       </main>
     </div>
   );

@@ -53,7 +53,7 @@ def fast_convert_video(input_path, output_path):
         convert_cmd = [
             'ffmpeg', '-i', input_path,
             '-c:v', 'libx264',      # H.264 codec
-            '-c:a', 'aac',          # AAC audio codec
+            '-c:a', 'mp3',          # MP3 audio codec (more compatible than AAC)
             '-preset', 'ultrafast',  # Fastest encoding
             '-crf', '28',           # Lower quality for speed
             '-maxrate', '500k',     # Limit bitrate
