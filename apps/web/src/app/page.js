@@ -40,18 +40,75 @@ export default function HomePage() {
 
     // Update video info periodically
     const updateVideoInfo = () => {
-      // Simulate video changes every 5-10 minutes for a live stream feel
+      // Much more diverse video categories for variety
       const videos = [
-        'Classic Commercial (1950s)',
-        'Educational Film (1960s)',
-        'Industrial Documentary (1970s)',
-        'Public Service Announcement (1980s)',
-        'Retro Advertisement (1990s)',
-        'Archive Footage (Various)',
+        // Educational and Documentary
+        'Educational Film (Various)',
+        'Documentary (Nature)',
+        'News Broadcast (Archive)',
+        'Television Show (Classic)',
+        
+        // Animation and Creative
+        'Animated Short (Experimental)',
+        'Cartoon (Vintage)',
+        'Art Film (Avant-garde)',
+        'Creative Animation',
+        
+        // Music and Performance
+        'Live Concert (Archive)',
+        'Music Video (Classic)',
+        'Performance Art',
+        'Live Music Session',
+        
+        // Sports and Action
+        'Sports Highlights (Archive)',
+        'Action Sequence',
+        'Adventure Documentary',
+        
+        // Sci-Fi and Fantasy
+        'Science Fiction Short',
+        'Fantasy Film (Classic)',
+        'Horror B-Movie',
+        
+        // Comedy and Entertainment
+        'Comedy Sketch (Vintage)',
+        'Variety Show (Archive)',
+        'Game Show (Classic)',
+        
+        // Technology and Science
+        'Technology Documentary',
+        'Science Film (Educational)',
+        'Space Exploration (Archive)',
+        
+        // Travel and Nature
+        'Travel Documentary',
+        'Nature Film (Wildlife)',
+        'Environmental Film',
+        
+        // Historical and Cultural
         'Historical Documentary',
-        'Vintage Animation',
+        'Cultural Film (International)',
+        'Ethnic Documentary',
+        
+        // Weird and Experimental
+        'Experimental Film',
+        'Underground Cinema',
+        'Cult Classic',
+        
+        // International Content
+        'Foreign Film (Classic)',
+        'World Cinema (Archive)',
+        'International Documentary',
+        
+        // Public Domain Classics
+        'Public Domain Film',
+        'Classic Commercial',
+        'Vintage Advertisement',
+        'Archive Footage',
+        'Historical Broadcast',
         'Classic Television',
-        'Public Domain Film'
+        'Retro Animation',
+        'Vintage Documentary'
       ];
       
       const randomVideo = videos[Math.floor(Math.random() * videos.length)];
@@ -250,7 +307,7 @@ export default function HomePage() {
             <span>•</span>
             <span>QUALITY: 480P STEREO</span>
             <span>•</span>
-            <span>SOURCE: INTERNET ARCHIVE</span>
+            <span>CONTENT: DIVERSE ARCHIVE</span>
           </div>
         </div>
       </main>

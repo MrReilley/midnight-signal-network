@@ -8,8 +8,8 @@ import subprocess
 
 VIDEO_DIR = '/app/content/main_channel'
 PLAYLIST_FILE = '/app/content/playlist.txt'
-MAX_VIDEOS = 3  # Reduced to 3 videos for faster startup
-MAX_DURATION = 5 * 60  # 5 minutes max per video (shorter videos)
+MAX_VIDEOS = 8  # Increased to 8 videos for more variety
+MAX_DURATION = 10 * 60  # 10 minutes max per video (more variety)
 
 def quick_validate_video(input_path):
     """Quick validation without conversion to check if video is usable"""
@@ -90,15 +90,83 @@ def fast_convert_video(input_path, output_path):
         return False
 
 def search_internet_archive():
-    """Search Internet Archive for short videos"""
-    print("Searching Internet Archive for short videos...")
+    """Search Internet Archive for diverse short videos"""
+    print("Searching Internet Archive for diverse short videos...")
     
-    # Focus on collections that are more likely to have short, compatible videos
+    # Much more diverse search queries for variety
     search_queries = [
-        'mediatype:movies AND collection:prelinger',  # Prelinger collection (short films)
-        'mediatype:movies AND collection:opensource_movies',  # Open source movies
-        'mediatype:movies AND collection:commercials',  # Commercials (usually short)
-        'mediatype:movies AND collection:advertising',  # Advertising (usually short)
+        # Educational and Documentary
+        'mediatype:movies AND collection:educational_films',
+        'mediatype:movies AND collection:documentary',
+        'mediatype:movies AND collection:news',
+        'mediatype:movies AND collection:television',
+        
+        # Animation and Creative
+        'mediatype:movies AND collection:animation',
+        'mediatype:movies AND collection:cartoons',
+        'mediatype:movies AND collection:experimental_film',
+        'mediatype:movies AND collection:art_films',
+        
+        # Music and Performance
+        'mediatype:movies AND collection:concerts',
+        'mediatype:movies AND collection:music_videos',
+        'mediatype:movies AND collection:performance',
+        'mediatype:movies AND collection:live_music',
+        
+        # Sports and Action
+        'mediatype:movies AND collection:sports',
+        'mediatype:movies AND collection:action',
+        'mediatype:movies AND collection:adventure',
+        
+        # Sci-Fi and Fantasy
+        'mediatype:movies AND collection:science_fiction',
+        'mediatype:movies AND collection:fantasy',
+        'mediatype:movies AND collection:horror',
+        
+        # Comedy and Entertainment
+        'mediatype:movies AND collection:comedy',
+        'mediatype:movies AND collection:variety_shows',
+        'mediatype:movies AND collection:game_shows',
+        
+        # Technology and Science
+        'mediatype:movies AND collection:technology',
+        'mediatype:movies AND collection:science',
+        'mediatype:movies AND collection:space',
+        
+        # Travel and Nature
+        'mediatype:movies AND collection:travel',
+        'mediatype:movies AND collection:nature',
+        'mediatype:movies AND collection:wildlife',
+        
+        # Historical and Cultural
+        'mediatype:movies AND collection:history',
+        'mediatype:movies AND collection:culture',
+        'mediatype:movies AND collection:ethnic',
+        
+        # Keep some classics but add variety
+        'mediatype:movies AND collection:prelinger',
+        'mediatype:movies AND collection:commercials',
+        'mediatype:movies AND collection:advertising',
+        
+        # Modern and Contemporary
+        'mediatype:movies AND collection:indie_films',
+        'mediatype:movies AND collection:short_films',
+        'mediatype:movies AND collection:student_films',
+        
+        # Weird and Experimental
+        'mediatype:movies AND collection:avant_garde',
+        'mediatype:movies AND collection:underground',
+        'mediatype:movies AND collection:cult_films',
+        
+        # International Content
+        'mediatype:movies AND collection:foreign_films',
+        'mediatype:movies AND collection:world_cinema',
+        'mediatype:movies AND collection:international',
+        
+        # Public Domain and Open Source
+        'mediatype:movies AND collection:public_domain',
+        'mediatype:movies AND collection:opensource_movies',
+        'mediatype:movies AND collection:creative_commons'
     ]
     
     all_videos = []
@@ -112,12 +180,12 @@ def search_internet_archive():
             params = {
                 'q': query,
                 'output': 'json',
-                'rows': 50,  # Reduced to 50 results per query
-                'fl': 'identifier,title,duration,downloads,avg_rating',
+                'rows': 30,  # Reduced to 30 results per query for faster processing
+                'fl': 'identifier,title,duration,downloads,avg_rating,description',
                 'sort': 'downloads desc'  # Sort by popularity
             }
             
-            response = requests.get(search_url, params=params, timeout=15)  # Reduced timeout
+            response = requests.get(search_url, params=params, timeout=15)
             response.raise_for_status()
             
             data = response.json()
@@ -134,17 +202,19 @@ def search_internet_archive():
                     except (ValueError, TypeError):
                         duration = 0
                     
-                    # Accept videos with no duration info or short duration
-                    if duration == 0 or (duration > 0 and duration <= MAX_DURATION):
+                    # Accept videos with no duration info or short duration (increased max to 10 minutes)
+                    if duration == 0 or (duration > 0 and duration <= 600):  # 10 minutes max
                         all_videos.append({
                             'identifier': video['identifier'],
                             'title': video.get('title', video['identifier']),
                             'duration': duration,
-                            'downloads': video.get('downloads', 0)
+                            'downloads': video.get('downloads', 0),
+                            'description': video.get('description', ''),
+                            'query': query  # Track which query found this
                         })
             
             # Shorter delay between requests
-            time.sleep(0.5)
+            time.sleep(0.3)
             
         except Exception as e:
             print(f"Error searching with query '{query}': {e}")
@@ -164,11 +234,11 @@ def search_internet_archive():
     # Debug: Show some of the videos we found
     if videos_list:
         print(f"Sample of found videos:")
-        for i, video in enumerate(videos_list[:3]):
-            print(f"  {i+1}. {video['title']} (ID: {video['identifier']}, Duration: {video['duration']}s, Downloads: {video['downloads']})")
+        for i, video in enumerate(videos_list[:5]):
+            print(f"  {i+1}. {video['title']} (ID: {video['identifier']}, Duration: {video['duration']}s, Downloads: {video['downloads']}, Source: {video['query']})")
     
     # Return top videos (most popular)
-    return videos_list[:50]  # Return top 50 for variety
+    return videos_list[:100]  # Return top 100 for more variety
 
 def get_video_download_url(video_id):
     """Get the best MP4 download URL for a video"""

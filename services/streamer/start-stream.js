@@ -10,8 +10,8 @@ const PORT = process.env.PORT || 3000;
 // Upgraded stream quality settings
 const BROADCAST_WIDTH = 854;  // 480p width
 const BROADCAST_HEIGHT = 480; // 480p height
-const BROADCAST_AUDIO_RATE = 48000; // 48kHz audio
-const BROADCAST_AUDIO_BITRATE = '128k'; // 128k stereo audio
+const BROADCAST_AUDIO_RATE = 44100; // 44.1kHz audio (more compatible)
+const BROADCAST_AUDIO_BITRATE = '192k'; // 192k stereo audio (better quality)
 
 // ============================================================================
 // MAIN EXECUTION LOGIC
@@ -114,6 +114,7 @@ function startPlaylistStreaming(playlistPath) {
         '-ar', BROADCAST_AUDIO_RATE.toString(), // Audio sample rate
         '-b:a', BROADCAST_AUDIO_BITRATE, // Audio bitrate
         '-ac', '2', // Stereo audio
+        '-af', 'volume=1.5', // Boost audio volume
         '-f', 'hls', // HLS format
         '-hls_time', '4', // Segment duration
         '-hls_list_size', '5', // Number of segments in playlist
@@ -169,6 +170,7 @@ function startSingleVideoStreaming(videoFile) {
         '-ar', BROADCAST_AUDIO_RATE.toString(), // Audio sample rate
         '-b:a', BROADCAST_AUDIO_BITRATE, // Audio bitrate
         '-ac', '2', // Stereo audio
+        '-af', 'volume=1.5', // Boost audio volume
         '-f', 'hls', // HLS format
         '-hls_time', '4', // Segment duration
         '-hls_list_size', '5', // Number of segments in playlist
