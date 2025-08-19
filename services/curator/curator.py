@@ -8,93 +8,97 @@ import subprocess
 
 VIDEO_DIR = '/app/content/main_channel'
 PLAYLIST_FILE = '/app/content/playlist.txt'
-MAX_VIDEOS = 5  # Reduced to 5 videos for faster startup
-MAX_DURATION = 10 * 60  # 10 minutes max per video (shorter videos)
+MAX_VIDEOS = 3  # Reduced to 3 videos for faster startup
+MAX_DURATION = 5 * 60  # 5 minutes max per video (shorter videos)
 
-def validate_and_convert_video(input_path, output_path):
-    """Validate and convert video to ensure it's compatible with FFmpeg streaming"""
+def quick_validate_video(input_path):
+    """Quick validation without conversion to check if video is usable"""
     try:
-        # First, check if the video is valid
+        # Quick probe to check if video is valid
         probe_cmd = [
             'ffprobe', '-v', 'quiet', '-print_format', 'json', 
             '-show_format', '-show_streams', input_path
         ]
         
-        result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=10)
         
         if result.returncode != 0:
-            print(f"  ✗ Invalid video file: {input_path}")
             return False
         
         # Parse the probe output
         try:
             probe_data = json.loads(result.stdout)
         except json.JSONDecodeError:
-            print(f"  ✗ Could not parse video metadata: {input_path}")
             return False
         
-        # Check if video stream exists
+        # Check if video stream exists and is H.264
         video_streams = [s for s in probe_data.get('streams', []) if s.get('codec_type') == 'video']
         if not video_streams:
-            print(f"  ✗ No video stream found: {input_path}")
             return False
         
-        # Convert to a compatible format
+        # Check if it's already H.264
+        video_stream = video_streams[0]
+        if video_stream.get('codec_name') == 'h264':
+            return True
+        
+        return False
+        
+    except Exception:
+        return False
+
+def fast_convert_video(input_path, output_path):
+    """Fast video conversion with minimal quality loss"""
+    try:
+        # Use very fast preset and lower quality for speed
         convert_cmd = [
             'ffmpeg', '-i', input_path,
-            '-c:v', 'libx264',  # Use H.264 codec
-            '-c:a', 'aac',      # Use AAC audio codec
-            '-preset', 'fast',   # Fast encoding
-            '-crf', '23',       # Good quality
-            '-y',               # Overwrite output
+            '-c:v', 'libx264',      # H.264 codec
+            '-c:a', 'aac',          # AAC audio codec
+            '-preset', 'ultrafast',  # Fastest encoding
+            '-crf', '28',           # Lower quality for speed
+            '-maxrate', '500k',     # Limit bitrate
+            '-bufsize', '1000k',    # Buffer size
+            '-y',                   # Overwrite output
             output_path
         ]
         
-        print(f"  Converting video to compatible format...")
-        result = subprocess.run(convert_cmd, capture_output=True, text=True, timeout=300)
+        print(f"  Converting video (fast mode)...")
+        result = subprocess.run(convert_cmd, capture_output=True, text=True, timeout=120)  # 2 minute timeout
         
         if result.returncode != 0:
-            print(f"  ✗ Video conversion failed: {result.stderr}")
-            return False
-        
-        # Verify the converted video
-        verify_cmd = [
-            'ffprobe', '-v', 'quiet', '-print_format', 'json', 
-            '-show_format', '-show_streams', output_path
-        ]
-        
-        result = subprocess.run(verify_cmd, capture_output=True, text=True, timeout=30)
-        
-        if result.returncode == 0:
-            print(f"  ✓ Video converted successfully")
-            return True
-        else:
-            print(f"  ✗ Converted video validation failed")
-            return False
+            print(f"  ✗ Fast conversion failed, trying copy mode...")
+            # Try just copying the streams if conversion fails
+            copy_cmd = [
+                'ffmpeg', '-i', input_path,
+                '-c', 'copy',        # Copy streams without re-encoding
+                '-y',               # Overwrite output
+                output_path
+            ]
             
+            result = subprocess.run(copy_cmd, capture_output=True, text=True, timeout=60)
+            
+            if result.returncode != 0:
+                return False
+        
+        return True
+        
     except subprocess.TimeoutExpired:
-        print(f"  ✗ Video processing timed out")
+        print(f"  ✗ Video conversion timed out")
         return False
     except Exception as e:
-        print(f"  ✗ Video processing error: {e}")
+        print(f"  ✗ Video conversion error: {e}")
         return False
 
 def search_internet_archive():
     """Search Internet Archive for short videos"""
     print("Searching Internet Archive for short videos...")
     
-    # Search queries that should return short videos
+    # Focus on collections that are more likely to have short, compatible videos
     search_queries = [
-        'mediatype:movies AND collection:prelinger',  # Prelinger collection
+        'mediatype:movies AND collection:prelinger',  # Prelinger collection (short films)
         'mediatype:movies AND collection:opensource_movies',  # Open source movies
-        'mediatype:movies AND collection:feature_films',  # Feature films
-        'mediatype:movies AND collection:animation',  # Animation
-        'mediatype:movies AND collection:educational',  # Educational
-        'mediatype:movies AND collection:commercials',  # Commercials
-        'mediatype:movies AND collection:advertising',  # Advertising
-        'mediatype:movies AND collection:industrial',  # Industrial films
-        'mediatype:movies AND collection:classic_tv',  # Classic TV
-        'mediatype:movies AND collection:public_domain',  # Public domain
+        'mediatype:movies AND collection:commercials',  # Commercials (usually short)
+        'mediatype:movies AND collection:advertising',  # Advertising (usually short)
     ]
     
     all_videos = []
@@ -108,12 +112,12 @@ def search_internet_archive():
             params = {
                 'q': query,
                 'output': 'json',
-                'rows': 100,  # Get 100 results per query
+                'rows': 50,  # Reduced to 50 results per query
                 'fl': 'identifier,title,duration,downloads,avg_rating',
                 'sort': 'downloads desc'  # Sort by popularity
             }
             
-            response = requests.get(search_url, params=params, timeout=30)
+            response = requests.get(search_url, params=params, timeout=15)  # Reduced timeout
             response.raise_for_status()
             
             data = response.json()
@@ -130,16 +134,8 @@ def search_internet_archive():
                     except (ValueError, TypeError):
                         duration = 0
                     
-                    # More lenient duration filtering - accept videos with no duration info
-                    if duration == 0:
-                        # Accept videos without duration info (they might be short)
-                        all_videos.append({
-                            'identifier': video['identifier'],
-                            'title': video.get('title', video['identifier']),
-                            'duration': duration,
-                            'downloads': video.get('downloads', 0)
-                        })
-                    elif duration > 0 and duration <= MAX_DURATION:
+                    # Accept videos with no duration info or short duration
+                    if duration == 0 or (duration > 0 and duration <= MAX_DURATION):
                         all_videos.append({
                             'identifier': video['identifier'],
                             'title': video.get('title', video['identifier']),
@@ -147,8 +143,8 @@ def search_internet_archive():
                             'downloads': video.get('downloads', 0)
                         })
             
-            # Small delay between requests
-            time.sleep(1)
+            # Shorter delay between requests
+            time.sleep(0.5)
             
         except Exception as e:
             print(f"Error searching with query '{query}': {e}")
@@ -165,68 +161,21 @@ def search_internet_archive():
     
     print(f"Total unique videos found: {len(videos_list)}")
     
-    # If we don't have enough videos, try a broader search
-    if len(videos_list) < 10:
-        print("Not enough videos found, trying broader search...")
-        try:
-            # Broader search without duration restrictions
-            broad_params = {
-                'q': 'mediatype:movies',
-                'output': 'json',
-                'rows': 200,
-                'fl': 'identifier,title,duration,downloads,avg_rating',
-                'sort': 'downloads desc'
-            }
-            
-            response = requests.get(search_url, params=broad_params, timeout=30)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if 'response' in data and 'docs' in data['response']:
-                videos = data['response']['docs']
-                print(f"Found {len(videos)} videos in broader search")
-                
-                for video in videos:
-                    duration_str = video.get('duration', '0')
-                    try:
-                        duration = int(duration_str) if duration_str else 0
-                    except (ValueError, TypeError):
-                        duration = 0
-                    
-                    # Accept longer videos in broader search
-                    if duration == 0 or (duration > 0 and duration <= MAX_DURATION * 2):  # Up to 20 minutes
-                        video_info = {
-                            'identifier': video['identifier'],
-                            'title': video.get('title', video['identifier']),
-                            'duration': duration,
-                            'downloads': video.get('downloads', 0)
-                        }
-                        if video['identifier'] not in unique_videos:
-                            unique_videos[video['identifier']] = video_info
-                
-                videos_list = list(unique_videos.values())
-                videos_list.sort(key=lambda x: x['downloads'], reverse=True)
-                print(f"Total videos after broader search: {len(videos_list)}")
-        
-        except Exception as e:
-            print(f"Error in broader search: {e}")
-    
     # Debug: Show some of the videos we found
     if videos_list:
         print(f"Sample of found videos:")
-        for i, video in enumerate(videos_list[:5]):
+        for i, video in enumerate(videos_list[:3]):
             print(f"  {i+1}. {video['title']} (ID: {video['identifier']}, Duration: {video['duration']}s, Downloads: {video['downloads']})")
     
     # Return top videos (most popular)
-    return videos_list[:100]  # Return top 100 for variety
+    return videos_list[:50]  # Return top 50 for variety
 
 def get_video_download_url(video_id):
     """Get the best MP4 download URL for a video"""
     try:
         # Get video metadata
         metadata_url = f"https://archive.org/metadata/{video_id}"
-        response = requests.get(metadata_url, timeout=30)
+        response = requests.get(metadata_url, timeout=15)  # Reduced timeout
         response.raise_for_status()
         
         metadata = response.json()
@@ -276,7 +225,7 @@ def download_video(video_info, index):
     temp_filepath = os.path.join(VIDEO_DIR, temp_filename)
     
     try:
-        response = requests.get(download_url, stream=True, timeout=60)
+        response = requests.get(download_url, stream=True, timeout=45)  # Reduced timeout
         response.raise_for_status()
         
         total_size = int(response.headers.get('content-length', 0))
@@ -289,9 +238,9 @@ def download_video(video_info, index):
                     f.write(chunk)
                     downloaded += len(chunk)
                     
-                    # Only log progress every 5 seconds to avoid rate limits
+                    # Only log progress every 10 seconds to reduce log volume
                     current_time = time.time()
-                    if current_time - last_log_time > 5:
+                    if current_time - last_log_time > 10:
                         if total_size > 0:
                             percent = (downloaded / total_size) * 100
                             print(f"  Progress: {percent:.1f}%")
@@ -305,11 +254,19 @@ def download_video(video_info, index):
         file_size = os.path.getsize(temp_filepath)
         print(f"  ✓ Downloaded successfully ({file_size} bytes)")
         
+        # Check if video is already compatible
+        if quick_validate_video(temp_filepath):
+            print(f"  ✓ Video is already compatible, using as-is")
+            final_filename = f"video_{index + 1:02d}_{video_id}.mp4"
+            final_filepath = os.path.join(VIDEO_DIR, final_filename)
+            os.rename(temp_filepath, final_filepath)
+            return final_filename
+        
         # Convert to compatible format
         final_filename = f"video_{index + 1:02d}_{video_id}.mp4"
         final_filepath = os.path.join(VIDEO_DIR, final_filename)
         
-        if validate_and_convert_video(temp_filepath, final_filepath):
+        if fast_convert_video(temp_filepath, final_filepath):
             # Remove temporary file
             os.remove(temp_filepath)
             return final_filename
