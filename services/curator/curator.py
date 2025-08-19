@@ -61,8 +61,16 @@ def search_internet_archive():
                     except (ValueError, TypeError):
                         duration = 0
                     
-                    # Only include videos with reasonable duration
-                    if duration > 0 and duration <= MAX_DURATION:
+                    # More lenient duration filtering - accept videos with no duration info
+                    if duration == 0:
+                        # Accept videos without duration info (they might be short)
+                        all_videos.append({
+                            'identifier': video['identifier'],
+                            'title': video.get('title', video['identifier']),
+                            'duration': duration,
+                            'downloads': video.get('downloads', 0)
+                        })
+                    elif duration > 0 and duration <= MAX_DURATION:
                         all_videos.append({
                             'identifier': video['identifier'],
                             'title': video.get('title', video['identifier']),
@@ -118,7 +126,7 @@ def search_internet_archive():
                         duration = 0
                     
                     # Accept longer videos in broader search
-                    if duration > 0 and duration <= MAX_DURATION * 2:  # Up to 20 minutes
+                    if duration == 0 or (duration > 0 and duration <= MAX_DURATION * 2):  # Up to 20 minutes
                         video_info = {
                             'identifier': video['identifier'],
                             'title': video.get('title', video['identifier']),
@@ -134,6 +142,12 @@ def search_internet_archive():
         
         except Exception as e:
             print(f"Error in broader search: {e}")
+    
+    # Debug: Show some of the videos we found
+    if videos_list:
+        print(f"Sample of found videos:")
+        for i, video in enumerate(videos_list[:5]):
+            print(f"  {i+1}. {video['title']} (ID: {video['identifier']}, Duration: {video['duration']}s, Downloads: {video['downloads']})")
     
     # Return top videos (most popular)
     return videos_list[:100]  # Return top 100 for variety
