@@ -169,7 +169,11 @@ export default function HomePage() {
         <div className="relative w-full max-w-5xl">
           {/* TV Border with Glass Effect */}
           <div className="glass-effect rounded-2xl p-2 neon-border">
-            <div className="relative bg-black rounded-xl overflow-hidden">
+            <div 
+              className="relative bg-black rounded-xl overflow-hidden"
+              onMouseEnter={() => setShowControls(true)}
+              onMouseLeave={() => setShowControls(false)}
+            >
               {/* Live Indicator */}
               {isLive && (
                 <div className="absolute top-4 right-4 z-30">
@@ -217,12 +221,14 @@ export default function HomePage() {
                   filter: 'contrast(1.1) brightness(0.9) saturate(0.8)',
                 }}
                 onContextMenu={(e) => e.preventDefault()}
-                onMouseEnter={() => setShowControls(true)}
-                onMouseLeave={() => setShowControls(false)}
               ></video>
 
               {/* Audio Controls */}
-              <div className={`audio-controls transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <div 
+                className={`audio-controls transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
+              >
                 <button 
                   onClick={toggleMute}
                   className="audio-button"

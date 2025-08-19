@@ -16,8 +16,6 @@ def search_internet_archive():
     
     # Search queries that should return short videos
     search_queries = [
-        'mediatype:movies AND duration:[* TO 600]',  # Under 10 minutes
-        'mediatype:movies AND duration:[* TO 300]',  # Under 5 minutes
         'mediatype:movies AND collection:prelinger',  # Prelinger collection
         'mediatype:movies AND collection:opensource_movies',  # Open source movies
         'mediatype:movies AND collection:feature_films',  # Feature films
@@ -26,6 +24,8 @@ def search_internet_archive():
         'mediatype:movies AND collection:commercials',  # Commercials
         'mediatype:movies AND collection:advertising',  # Advertising
         'mediatype:movies AND collection:industrial',  # Industrial films
+        'mediatype:movies AND collection:classic_tv',  # Classic TV
+        'mediatype:movies AND collection:public_domain',  # Public domain
     ]
     
     all_videos = []
@@ -39,7 +39,7 @@ def search_internet_archive():
             params = {
                 'q': query,
                 'output': 'json',
-                'rows': 50,  # Get 50 results per query
+                'rows': 100,  # Get 100 results per query
                 'fl': 'identifier,title,duration,downloads,avg_rating',
                 'sort': 'downloads desc'  # Sort by popularity
             }
@@ -54,9 +54,15 @@ def search_internet_archive():
                 print(f"Found {len(videos)} videos for query: {query}")
                 
                 for video in videos:
+                    # Handle duration - convert to int if possible
+                    duration_str = video.get('duration', '0')
+                    try:
+                        duration = int(duration_str) if duration_str else 0
+                    except (ValueError, TypeError):
+                        duration = 0
+                    
                     # Only include videos with reasonable duration
-                    duration = video.get('duration', 0)
-                    if duration and duration <= MAX_DURATION:
+                    if duration > 0 and duration <= MAX_DURATION:
                         all_videos.append({
                             'identifier': video['identifier'],
                             'title': video.get('title', video['identifier']),
@@ -81,6 +87,53 @@ def search_internet_archive():
     videos_list.sort(key=lambda x: x['downloads'], reverse=True)
     
     print(f"Total unique videos found: {len(videos_list)}")
+    
+    # If we don't have enough videos, try a broader search
+    if len(videos_list) < 10:
+        print("Not enough videos found, trying broader search...")
+        try:
+            # Broader search without duration restrictions
+            broad_params = {
+                'q': 'mediatype:movies',
+                'output': 'json',
+                'rows': 200,
+                'fl': 'identifier,title,duration,downloads,avg_rating',
+                'sort': 'downloads desc'
+            }
+            
+            response = requests.get(search_url, params=broad_params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'response' in data and 'docs' in data['response']:
+                videos = data['response']['docs']
+                print(f"Found {len(videos)} videos in broader search")
+                
+                for video in videos:
+                    duration_str = video.get('duration', '0')
+                    try:
+                        duration = int(duration_str) if duration_str else 0
+                    except (ValueError, TypeError):
+                        duration = 0
+                    
+                    # Accept longer videos in broader search
+                    if duration > 0 and duration <= MAX_DURATION * 2:  # Up to 20 minutes
+                        video_info = {
+                            'identifier': video['identifier'],
+                            'title': video.get('title', video['identifier']),
+                            'duration': duration,
+                            'downloads': video.get('downloads', 0)
+                        }
+                        if video['identifier'] not in unique_videos:
+                            unique_videos[video['identifier']] = video_info
+                
+                videos_list = list(unique_videos.values())
+                videos_list.sort(key=lambda x: x['downloads'], reverse=True)
+                print(f"Total videos after broader search: {len(videos_list)}")
+        
+        except Exception as e:
+            print(f"Error in broader search: {e}")
     
     # Return top videos (most popular)
     return videos_list[:100]  # Return top 100 for variety
