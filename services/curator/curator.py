@@ -10,117 +10,80 @@ PLAYLIST_FILE = '/app/content/playlist.txt'
 MAX_VIDEOS = 5  # Reduced to 5 videos for faster startup
 MAX_DURATION = 10 * 60  # 10 minutes max per video (shorter videos)
 
-# Known short video IDs from Internet Archive (fast-downloading, small files)
-SHORT_VIDEO_IDS = [
-    'prelinger_1949_Lucky_Strike_Be_Happy_Go_Lucky',
-    'prelinger_1950_Chevrolet_1950_Chevrolet_Show',
-    'prelinger_1951_Chevrolet_1951_Chevrolet_Show',
-    'prelinger_1952_Chevrolet_1952_Chevrolet_Show',
-    'prelinger_1953_Chevrolet_1953_Chevrolet_Show',
-    'prelinger_1954_Chevrolet_1954_Chevrolet_Show',
-    'prelinger_1955_Chevrolet_1955_Chevrolet_Show',
-    'prelinger_1956_Chevrolet_1956_Chevrolet_Show',
-    'prelinger_1957_Chevrolet_1957_Chevrolet_Show',
-    'prelinger_1958_Chevrolet_1958_Chevrolet_Show',
-    'prelinger_1959_Chevrolet_1959_Chevrolet_Show',
-    'prelinger_1960_Chevrolet_1960_Chevrolet_Show',
-    'prelinger_1961_Chevrolet_1961_Chevrolet_Show',
-    'prelinger_1962_Chevrolet_1962_Chevrolet_Show',
-    'prelinger_1963_Chevrolet_1963_Chevrolet_Show',
-    'prelinger_1964_Chevrolet_1964_Chevrolet_Show',
-    'prelinger_1965_Chevrolet_1965_Chevrolet_Show',
-    'prelinger_1966_Chevrolet_1966_Chevrolet_Show',
-    'prelinger_1967_Chevrolet_1967_Chevrolet_Show',
-    'prelinger_1968_Chevrolet_1968_Chevrolet_Show',
-    'prelinger_1969_Chevrolet_1969_Chevrolet_Show',
-    'prelinger_1970_Chevrolet_1970_Chevrolet_Show',
-    'prelinger_1971_Chevrolet_1971_Chevrolet_Show',
-    'prelinger_1972_Chevrolet_1972_Chevrolet_Show',
-    'prelinger_1973_Chevrolet_1973_Chevrolet_Show',
-    'prelinger_1974_Chevrolet_1974_Chevrolet_Show',
-    'prelinger_1975_Chevrolet_1975_Chevrolet_Show',
-    'prelinger_1976_Chevrolet_1976_Chevrolet_Show',
-    'prelinger_1977_Chevrolet_1977_Chevrolet_Show',
-    'prelinger_1978_Chevrolet_1978_Chevrolet_Show',
-    'prelinger_1979_Chevrolet_1979_Chevrolet_Show',
-    'prelinger_1980_Chevrolet_1980_Chevrolet_Show',
-    'prelinger_1981_Chevrolet_1981_Chevrolet_Show',
-    'prelinger_1982_Chevrolet_1982_Chevrolet_Show',
-    'prelinger_1983_Chevrolet_1983_Chevrolet_Show',
-    'prelinger_1984_Chevrolet_1984_Chevrolet_Show',
-    'prelinger_1985_Chevrolet_1985_Chevrolet_Show',
-    'prelinger_1986_Chevrolet_1986_Chevrolet_Show',
-    'prelinger_1987_Chevrolet_1987_Chevrolet_Show',
-    'prelinger_1988_Chevrolet_1988_Chevrolet_Show',
-    'prelinger_1989_Chevrolet_1989_Chevrolet_Show',
-    'prelinger_1990_Chevrolet_1990_Chevrolet_Show',
-    'prelinger_1991_Chevrolet_1991_Chevrolet_Show',
-    'prelinger_1992_Chevrolet_1992_Chevrolet_Show',
-    'prelinger_1993_Chevrolet_1993_Chevrolet_Show',
-    'prelinger_1994_Chevrolet_1994_Chevrolet_Show',
-    'prelinger_1995_Chevrolet_1995_Chevrolet_Show',
-    'prelinger_1996_Chevrolet_1996_Chevrolet_Show',
-    'prelinger_1997_Chevrolet_1997_Chevrolet_Show',
-    'prelinger_1998_Chevrolet_1998_Chevrolet_Show',
-    'prelinger_1999_Chevrolet_1999_Chevrolet_Show',
-    'prelinger_2000_Chevrolet_2000_Chevrolet_Show',
-    'prelinger_2001_Chevrolet_2001_Chevrolet_Show',
-    'prelinger_2002_Chevrolet_2002_Chevrolet_Show',
-    'prelinger_2003_Chevrolet_2003_Chevrolet_Show',
-    'prelinger_2004_Chevrolet_2004_Chevrolet_Show',
-    'prelinger_2005_Chevrolet_2005_Chevrolet_Show',
-    'prelinger_2006_Chevrolet_2006_Chevrolet_Show',
-    'prelinger_2007_Chevrolet_2007_Chevrolet_Show',
-    'prelinger_2008_Chevrolet_2008_Chevrolet_Show',
-    'prelinger_2009_Chevrolet_2009_Chevrolet_Show',
-    'prelinger_2010_Chevrolet_2010_Chevrolet_Show',
-    'prelinger_2011_Chevrolet_2011_Chevrolet_Show',
-    'prelinger_2012_Chevrolet_2012_Chevrolet_Show',
-    'prelinger_2013_Chevrolet_2013_Chevrolet_Show',
-    'prelinger_2014_Chevrolet_2014_Chevrolet_Show',
-    'prelinger_2015_Chevrolet_2015_Chevrolet_Show',
-    'prelinger_2016_Chevrolet_2016_Chevrolet_Show',
-    'prelinger_2017_Chevrolet_2017_Chevrolet_Show',
-    'prelinger_2018_Chevrolet_2018_Chevrolet_Show',
-    'prelinger_2019_Chevrolet_2019_Chevrolet_Show',
-    'prelinger_2020_Chevrolet_2020_Chevrolet_Show',
-    'prelinger_2021_Chevrolet_2021_Chevrolet_Show',
-    'prelinger_2022_Chevrolet_2022_Chevrolet_Show',
-    'prelinger_2023_Chevrolet_2023_Chevrolet_Show',
-    'prelinger_2024_Chevrolet_2024_Chevrolet_Show',
-    'prelinger_2025_Chevrolet_2025_Chevrolet_Show',
-    'prelinger_2026_Chevrolet_2026_Chevrolet_Show',
-    'prelinger_2027_Chevrolet_2027_Chevrolet_Show',
-    'prelinger_2028_Chevrolet_2028_Chevrolet_Show',
-    'prelinger_2029_Chevrolet_2029_Chevrolet_Show',
-    'prelinger_2030_Chevrolet_2030_Chevrolet_Show',
-    'prelinger_2031_Chevrolet_2031_Chevrolet_Show',
-    'prelinger_2032_Chevrolet_2032_Chevrolet_Show',
-    'prelinger_2033_Chevrolet_2033_Chevrolet_Show',
-    'prelinger_2034_Chevrolet_2034_Chevrolet_Show',
-    'prelinger_2035_Chevrolet_2035_Chevrolet_Show',
-    'prelinger_2036_Chevrolet_2036_Chevrolet_Show',
-    'prelinger_2037_Chevrolet_2037_Chevrolet_Show',
-    'prelinger_2038_Chevrolet_2038_Chevrolet_Show',
-    'prelinger_2039_Chevrolet_2039_Chevrolet_Show',
-    'prelinger_2040_Chevrolet_2040_Chevrolet_Show',
-    'prelinger_2041_Chevrolet_2041_Chevrolet_Show',
-    'prelinger_2042_Chevrolet_2042_Chevrolet_Show',
-    'prelinger_2043_Chevrolet_2043_Chevrolet_Show',
-    'prelinger_2044_Chevrolet_2044_Chevrolet_Show',
-    'prelinger_2045_Chevrolet_2045_Chevrolet_Show',
-    'prelinger_2046_Chevrolet_2046_Chevrolet_Show',
-    'prelinger_2047_Chevrolet_2047_Chevrolet_Show',
-    'prelinger_2048_Chevrolet_2048_Chevrolet_Show',
-    'prelinger_2049_Chevrolet_2049_Chevrolet_Show',
-    'prelinger_2050_Chevrolet_2050_Chevrolet_Show',
-]
-
-def get_random_video_ids():
-    """Get random video IDs for variety"""
-    # Randomly select from our known short video list
-    selected_ids = random.sample(SHORT_VIDEO_IDS, min(MAX_VIDEOS, len(SHORT_VIDEO_IDS)))
-    return selected_ids
+def search_internet_archive():
+    """Search Internet Archive for short videos"""
+    print("Searching Internet Archive for short videos...")
+    
+    # Search queries that should return short videos
+    search_queries = [
+        'mediatype:movies AND duration:[* TO 600]',  # Under 10 minutes
+        'mediatype:movies AND duration:[* TO 300]',  # Under 5 minutes
+        'mediatype:movies AND collection:prelinger',  # Prelinger collection
+        'mediatype:movies AND collection:opensource_movies',  # Open source movies
+        'mediatype:movies AND collection:feature_films',  # Feature films
+        'mediatype:movies AND collection:animation',  # Animation
+        'mediatype:movies AND collection:educational',  # Educational
+        'mediatype:movies AND collection:commercials',  # Commercials
+        'mediatype:movies AND collection:advertising',  # Advertising
+        'mediatype:movies AND collection:industrial',  # Industrial films
+    ]
+    
+    all_videos = []
+    
+    for query in search_queries:
+        try:
+            print(f"Searching: {query}")
+            
+            # Search API endpoint
+            search_url = "https://archive.org/advancedsearch.php"
+            params = {
+                'q': query,
+                'output': 'json',
+                'rows': 50,  # Get 50 results per query
+                'fl': 'identifier,title,duration,downloads,avg_rating',
+                'sort': 'downloads desc'  # Sort by popularity
+            }
+            
+            response = requests.get(search_url, params=params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'response' in data and 'docs' in data['response']:
+                videos = data['response']['docs']
+                print(f"Found {len(videos)} videos for query: {query}")
+                
+                for video in videos:
+                    # Only include videos with reasonable duration
+                    duration = video.get('duration', 0)
+                    if duration and duration <= MAX_DURATION:
+                        all_videos.append({
+                            'identifier': video['identifier'],
+                            'title': video.get('title', video['identifier']),
+                            'duration': duration,
+                            'downloads': video.get('downloads', 0)
+                        })
+            
+            # Small delay between requests
+            time.sleep(1)
+            
+        except Exception as e:
+            print(f"Error searching with query '{query}': {e}")
+            continue
+    
+    # Remove duplicates and sort by popularity
+    unique_videos = {}
+    for video in all_videos:
+        if video['identifier'] not in unique_videos:
+            unique_videos[video['identifier']] = video
+    
+    videos_list = list(unique_videos.values())
+    videos_list.sort(key=lambda x: x['downloads'], reverse=True)
+    
+    print(f"Total unique videos found: {len(videos_list)}")
+    
+    # Return top videos (most popular)
+    return videos_list[:100]  # Return top 100 for variety
 
 def get_video_download_url(video_id):
     """Get the best MP4 download URL for a video"""
@@ -135,7 +98,7 @@ def get_video_download_url(video_id):
             print(f"No files found for {video_id}")
             return None
             
-        # Find the smallest MP4 file for faster download
+        # Find MP4 files
         mp4_files = []
         for file_info in metadata['files']:
             if file_info['name'].endswith('.mp4') and 'size' in file_info:
@@ -159,9 +122,13 @@ def get_video_download_url(video_id):
         print(f"Error getting download URL for {video_id}: {e}")
         return None
 
-def download_video(video_id, index):
+def download_video(video_info, index):
     """Download a single video with minimal logging"""
-    print(f"Downloading video {index + 1}: {video_id}")
+    video_id = video_info['identifier']
+    title = video_info['title']
+    duration = video_info['duration']
+    
+    print(f"Downloading video {index + 1}: {title} ({duration}s)")
     
     download_url = get_video_download_url(video_id)
     if not download_url:
@@ -260,14 +227,23 @@ def fetch_curated_playlist():
         create_playlist(existing_videos)
         return
     
-    # Get random video IDs
-    video_ids = get_random_video_ids()
-    print(f"Selected {len(video_ids)} random videos for download: {video_ids}")
+    # Search for videos on Internet Archive
+    available_videos = search_internet_archive()
+    
+    if not available_videos:
+        print("ERROR: No videos found on Internet Archive!")
+        sys.exit(1)
+    
+    # Randomly select videos from the available list
+    selected_videos = random.sample(available_videos, min(MAX_VIDEOS, len(available_videos)))
+    print(f"Selected {len(selected_videos)} random videos for download:")
+    for i, video in enumerate(selected_videos):
+        print(f"  {i+1}. {video['title']} ({video['duration']}s)")
     
     downloaded_files = []
     
-    for i, video_id in enumerate(video_ids):
-        filename = download_video(video_id, i)
+    for i, video_info in enumerate(selected_videos):
+        filename = download_video(video_info, i)
         if filename:
             downloaded_files.append(filename)
         
@@ -277,7 +253,7 @@ def fetch_curated_playlist():
     
     if not downloaded_files:
         print("ERROR: No videos were successfully downloaded!")
-        print("This should not happen with our curated video list.")
+        print("This might be due to network issues or unavailable videos.")
         sys.exit(1)
     
     # Create playlist
